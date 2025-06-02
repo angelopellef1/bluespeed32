@@ -17,9 +17,8 @@ BluetoothSerial SerialBT;
 #define ELM_PORT SerialBT
 #define DEBUG_PORT Serial
 
+#define UNDEFINED_VALUE  0x7F7FFFFF
 
-#define TFT_C_DARKBLUE  0x0176
-#define TFT_C_YELLORANCE 0xFEE0
 
 //Display 240X135
 
@@ -44,39 +43,26 @@ enum req_stages
 
 
 
-typedef enum {
+ typedef enum {
   ENG_RPM,
   SPEED,
-  OIL
+  GEAR_C,
+  OIL,
+  COOLANT,
+  PID_N
 } obd_pid_states;
+
+
+
 obd_pid_states obd_state = ENG_RPM;
 
-//statuys
-const int X0 = 200;
-const int Y0 = 0;
-
-//rpm
-const int X1 = 0;
-const int Y1 = 0;
-
-//speed
-const int X2 = 165;
-const int Y2 = 0;
-
-//gear
-const int X3 = 75;
-const int Y3 = 0;
-
-//oil
-const int X4 = 0;
-const int Y4 = 50;
 
 
-const int FONT_N = 6;
-const int FONT_BIG = 24;
+
 
 
 const int UNDEFINED_GEAR = 9;
+
 
 
 String Srpm = "";
@@ -95,58 +81,10 @@ int digitCount(int num) {
   return count;
 }
 
-void DrawNumberBox_Big(String  num, int x, int y, int font_size)
-{
-  // Create a sprite 80 pixels wide, 50 high (8kbytes of RAM needed)
-  img.createSprite(90, 135);
-   img.setTextWrap(false); 
-  // Fill it with black
-  img.fillSprite(TFT_DARKGREY);
+struct car_t {
+  float rpm;
+} car;
 
- 
-  // Set the font parameters
-  img.setTextSize(1);           // Font size scaling is x1
-  img.setFreeFont(&Orbitron_Light_24);  // Select free font Formula1_Bold_web_020pt7bBitmaps
-  img.setTextColor(TFT_YELLOW);  // White text, no background colour
-
-  // Set text coordinate datum to middle centre
-  img.setTextDatum(MC_DATUM);
-
-  // Draw the number in middle of 80 x 50 sprite
-  img.drawString(num+"\0", 45, 67);
-
-  // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
-  img.pushSprite(x, y);
-
-  // Delete sprite to free up the RAM
-  img.deleteSprite();
-}
-
-
-void numberBox(String  num, int x, int y, int font_size)
-{
-  // Create a sprite 80 pixels wide, 50 high (8kbytes of RAM needed)
-  img.createSprite(75, 45);
-   img.setTextWrap(false); 
-  // Fill it with black
-  img.fillSprite(TFT_C_DARKBLUE);
-
- 
-  // Set the font parameters
-  img.setTextSize(1);           // Font size scaling is x1
-  //img.setFreeFont(&FreeSerifBoldItalic24pt7b);  // Select free font
-  img.setTextColor(TFT_WHITE);  // White text, no background colour
-
-  // Set text coordinate datum to middle centre
-  img.setTextDatum(MC_DATUM);
-  img.drawString(num+"\0", 37, 25,font_size);
-
-  // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
-  img.pushSprite(x, y);
-
-  // Delete sprite to free up the RAM
-  img.deleteSprite();
-}
 
 
 void setup()
@@ -155,7 +93,7 @@ void setup()
     tft.init();
     tft.setRotation(1);
     tft.fillScreen(TFT_BLACK);
-    tft.fillRect(X0,Y0,40,5,TFT_BLUE);
+    tft.fillRect(0,0,40,5,TFT_BLUE);
   
     DEBUG_PORT.begin(115200);
     // SerialBT.setPin("1234");
@@ -167,7 +105,7 @@ void setup()
         while (1)
             ;
     }
-    tft.fillRect(X0,Y0,40,5,TFT_GREEN);
+    tft.fillRect(0,0,40,5,TFT_GREEN);
 
     if (!myELM327.begin(ELM_PORT, true, 2000))
     {
@@ -176,9 +114,7 @@ void setup()
             ;
     }
 
-    init_ratios();
-    
-    tft.fillRect(X0,Y0,40,5,TFT_BLACK);
+    Scheduler_Init();
 
     DEBUG_PORT.println("Connected to ELM327");
 
@@ -192,14 +128,19 @@ void setup()
     //tft.drawString("Vss", X2, Y2,   4);
     //tft.drawString("---", X2, Y2+20, FONT_N);
     myELM327.sendCommand_Blocking(HEADERS_ON);
+    tft.drawRect(75,0,90,135,TFT_DARKGREY);
 }
 
 void loop()
 {
-  static float bk_rpm, rpm, bk_kmh, kmh, gear, oil ;
+  static float bk_rpm, rpm, bk_kmh, kmh, gear, oil, cool ;
   req_states req = REQ_OK;
 
   static int oil_freq = 30;
+
+
+  obd_state = Scheduler_task_calculate(obd_state);
+
 
   switch (obd_state)
   {
@@ -207,20 +148,17 @@ void loop()
     {
       bk_rpm = rpm;
       rpm = myELM327.rpm();
-      Srpm = String(rpm,0);
-      
-
-      
+      car.rpm = rpm; 
       if (myELM327.nb_rx_state == ELM_SUCCESS)
       {
-        numberBox(Srpm, X1, Y1, 4);
+        GuiBox_draw(ENG_RPM, rpm);
        
-        obd_state = SPEED;
+        Scheduler_release(); //obd_state = SPEED;
       }
       else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
       {
         myELM327.printError();
-        obd_state = SPEED;
+        Scheduler_release(); //obd_state = SPEED;
       }
       break;
     }
@@ -229,60 +167,71 @@ void loop()
     {
       bk_kmh = kmh;
       kmh = myELM327.kph();
-      gear = calculate_gear(kmh,rpm);
       Svss = String(kmh,0);
       if (myELM327.nb_rx_state == ELM_SUCCESS)
       {
-        numberBox(Svss, X2, Y2, 4);
-        gear = calculate_gear(kmh,rpm);
-        if(gear != UNDEFINED_GEAR+1)
-        {
-          Sgear = String(gear,0);
-        }
-        else
-        {
-          Sgear = "-";
-        }
-        DrawNumberBox_Big(Sgear, X3 ,Y3+0, FONT_BIG);
-        oil_freq--;
-        if(!oil_freq)
-        {
-          oil_freq = 30;
-          obd_state = OIL;
-        }
-        else
-        {
-          obd_state = ENG_RPM;
-        }
-          
+        GuiBox_draw(SPEED, kmh);
+        Scheduler_release(); //obd_state = ENG_RPM;
       }
       else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
       {
         myELM327.printError();
-        obd_state = OIL;
+        Scheduler_release(); //obd_state = OIL;
       } 
       break;
     }
     
+    case GEAR_C:
+      gear = calculate_gear(kmh,rpm);
+      if(gear < 7)
+      {
+        GuiBox_draw(GEAR_C,gear);
+      }
+      else
+      {
+       GuiBox_draw(GEAR_C,UNDEFINED_VALUE);
+      }
+     
+      Scheduler_release();
+    break;
+
+
     case OIL:
       req = obdcustom_subaru_oil(&oil);
       if(REQ_OK == req)
       {
         //DRAW
-        Soil = String(oil,0);
-        numberBox(Soil, X4, Y4, 4);
-        obd_state = ENG_RPM;
+       
+        GuiBox_draw(OIL, oil);
+        Scheduler_release(); //obd_state = ENG_RPM;
       }
       else if(REQ_E_FAIL == req)
       {
         //no draw
-        numberBox("--", X4, Y4, 4);
-        obd_state = ENG_RPM;
+         GuiBox_draw(OIL, 0);
+        Scheduler_release(); //obd_state = ENG_RPM;
       }
       else
       {
         //wait..
       }
+    break;
+
+    case COOLANT:
+     {
+      cool = myELM327.engineCoolantTemp();
+      if (myELM327.nb_rx_state == ELM_SUCCESS)
+      {
+        GuiBox_draw(COOLANT, cool);
+        Scheduler_release(); //obd_state = ENG_RPM;
+      }
+      else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
+      {
+        myELM327.printError();
+        Scheduler_release(); //obd_state = OIL;
+      } 
+      break;
+    }
     break;
 
     default:
