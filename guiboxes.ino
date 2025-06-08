@@ -10,6 +10,7 @@
 
 
  #include <TFT_eSPI.h> // Graphics and font library for ILI9341 driver chip
+ #include "aphud.h"
 
 #define TFT_C_DARKBLUE  0x0176
 #define TFT_C_YELLORANCE 0xFEE0
@@ -50,11 +51,11 @@ typedef struct
 
  const color_profiles_t color_profile[MAX_GUIBOXES] = 
  {
-    {ENG_RPM,   {2500,2501,3500,6000}, {TFT_C_DARKBLUE, TFT_C_DARK_GREEN, TFT_BLACK, TFT_BLACK}, {TFT_WHITE, TFT_WHITE, TFT_WHITE, TFT_WHITE} },
+    {ENG_RPM,   {1980,1981,3500,6000}, {TFT_C_DARKBLUE, TFT_C_DARK_GREEN, TFT_BLACK, TFT_BLACK}, {TFT_WHITE, TFT_WHITE, TFT_WHITE, TFT_WHITE} },
     {SPEED,     {0,1,135,210}, {TFT_BLACK, TFT_BLACK, TFT_C_DARK_MAGENTA, TFT_C_YELLORANCE}, {TFT_WHITE, TFT_WHITE, TFT_WHITE, TFT_BLACK} },
-    {GEAR_C,    {1000,1001,5500,6000}, {TFT_BLACK, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} },
+    {GEAR_C,    {1000,1001,5000,6000}, {TFT_BLACK, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} },
     {OIL,       {80,81,118,125},        {TFT_C_DARKBLUE, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} },
-    {COOLANT,   {85,86,105,110},        {TFT_C_DARKBLUE, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} }
+    {COOLANT,   {80,81,100,110},        {TFT_C_DARKBLUE, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} }
  };
 
 
@@ -69,6 +70,67 @@ typedef struct
     {OIL,       GB_MEDIUM,  0,90,    4},
     {COOLANT,   GB_MEDIUM,  165,90,    4}
  };
+
+
+void GUI_DrawImage_Splash() 
+{
+    img.createSprite(240, 135);
+    img.setTextWrap(false); 
+    img.fillSprite(TFT_BLACK);
+    img.setSwapBytes(true);
+    img.pushImage(0,0,240,135,aphud);
+    img.setTextWrap(false); 
+    // Set text coordinate datum to middle centre
+    img.setTextDatum(MC_DATUM);
+    // Draw the number in middle of 80 x 50 sprite
+    img.setTextSize(2);           // Font size scaling is x1
+    img.setTextColor(TFT_DARKGREY);  // White text, no background colour
+    img.drawString("APHUD", 180,80);
+    img.drawString("Subaru BRZ", 150,105);
+
+    // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
+    img.pushSprite(0, 0);
+
+    // Delete sprite to free up the RAM
+    //img.deleteSprite();
+
+}
+
+void GUI_Move_Splash() 
+{
+    for(int i = 0; i<240;i++)
+    {
+         img.pushSprite(i, 0);
+    }
+    img.deleteSprite();
+}
+
+
+void GUI_Splash(String  text, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
+{
+
+    img.createSprite(240, 135);
+    img.setTextWrap(false); 
+    // Fill it with black
+    img.fillSprite(color_bkg);
+    // Set the font parameters
+    img.setTextSize(2);           // Font size scaling is x1
+    //img.setFreeFont(&FreeSerifBoldItalic24pt7b);  // Select free font
+    img.setTextColor(color_text);  // White text, no background colour
+
+    // Set text coordinate datum to middle centre
+    img.setTextDatum(MC_DATUM);
+    img.setFreeFont(&Orbitron_Light_24);  // Select free font Formula1_Bold_web_020pt7bBitmaps
+    img.drawString(text+"\0", 20, 67,font_size);
+
+    // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
+    img.pushSprite(x, y);
+
+    // Delete sprite to free up the RAM
+    img.deleteSprite();
+    
+}
+
 
 
 void DrawNumberBox_Big(String  num, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
@@ -87,16 +149,21 @@ void DrawNumberBox_Big(String  num, int x, int y, int font_size, uint16_t color_
     img.setTextColor(color_text);  // White text, no background colour
 
     // Set text coordinate datum to middle centre
-    img.setTextDatum(MC_DATUM);
+    img.setTextDatum(ML_DATUM);
 
     // Draw the number in middle of 80 x 50 sprite
-    img.drawString(num+"\0", 30, 67);
+    img.drawString(num+"\0", 0, 60);
 
     // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
     img.pushSprite(x, y);
 
     // Delete sprite to free up the RAM
     img.deleteSprite();
+}
+
+void textBox(String  txt, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
+{
+   
 }
 
 void numberBox(String  num, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
