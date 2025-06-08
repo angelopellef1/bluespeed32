@@ -62,11 +62,14 @@ req_states obdcustom_subaru_oil( float * value)
             
             if (myELM327.nb_rx_state == ELM_SUCCESS)    // Our response is fully received, let's get our data
             {      
+                #if 1
                 byte rawValue = myELM327.payload[0];
-                float oilTemp = (float)rawValue - 40.0;        // Print the adjusted value
+                *value = (float)rawValue - 40.0;        // Print the adjusted value
                 nb_query_state = SEND_COMMAND;          // Reset the query state for the next command
                 req_stage = STEP_RESTORE_HEADER;
                 //delay(5000);                            // Wait 5 seconds until we query again
+                #endif
+
             }
             else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
             {                                           // If state == ELM_GETTING_MSG, response is not yet complete. Restart the loop.
@@ -74,6 +77,10 @@ req_states obdcustom_subaru_oil( float * value)
                 req_stage = STEP_RESTORE_HEADER;
                 myELM327.printError();
                 //delay(5000);                            // Wait 5 seconds until we query again
+            }
+            else
+            {
+                // If state == ELM_GETTING_MSG, response is not yet complete.
             }
         break;
 
