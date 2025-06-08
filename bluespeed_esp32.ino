@@ -6,7 +6,6 @@
 #include <TFT_eSPI.h> // Graphics and font library for ILI9341 driver chip
 #include <SPI.h>
 
-
 #include "Formula1_Bold_web_020pt7b.h"
 
 TFT_eSPI tft = TFT_eSPI(); 
@@ -19,9 +18,7 @@ BluetoothSerial SerialBT;
 
 #define UNDEFINED_VALUE  0x7F7FFFFF
 
-
 //Display 240X135
-
 ELM327 myELM327;
 
 enum req_states 
@@ -40,10 +37,7 @@ enum req_stages
 };
 
 
-
-
-
- typedef enum {
+typedef enum {
   ENG_RPM,
   SPEED,
   GEAR_C,
@@ -52,24 +46,14 @@ enum req_stages
   PID_N
 } obd_pid_states;
 
-
-
 obd_pid_states obd_state = ENG_RPM;
 
-
-
-
-
-
 const int UNDEFINED_GEAR = 9;
-
-
 
 String Srpm = "";
 String Svss = "";
 String Sgear = "";
 String Soil = "";
-
 
 int digitCount(int num) {
   if (num == 0) return 1;
@@ -86,14 +70,18 @@ struct car_t {
 } car;
 
 
-
 void setup()
 {   
 
     tft.init();
     tft.setRotation(1);
     tft.fillScreen(TFT_BLACK);
-    tft.fillRect(0,0,40,5,TFT_BLUE);
+    
+    // Init communication
+    //tft.fillRect(0,0,40,5,TFT_BLUE);
+    //GUI_Splash("AP Hud BRZ",0,0, 4, TFT_BLACK, 0xFEE0);
+    GUI_DrawImage_Splash();
+
   
     DEBUG_PORT.begin(115200);
     // SerialBT.setPin("1234");
@@ -105,7 +93,16 @@ void setup()
         while (1)
             ;
     }
-    tft.fillRect(0,0,40,5,TFT_GREEN);
+
+    GUI_Move_Splash();
+
+    //bt OK, comm with ELM327
+    //tft.fillRect(0,0,40,5,TFT_GREEN);
+    //GUI_Splash("Ready to Race",0,0, 4, 0x0176, TFT_WHITE);
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextColor(TFT_DARKGREY, TFT_BLACK);
+    tft.setTextSize(1);
+    tft.drawString("Ready to Race ..", 10, 60,   4);
 
     if (!myELM327.begin(ELM_PORT, true, 2000))
     {
@@ -119,8 +116,8 @@ void setup()
     DEBUG_PORT.println("Connected to ELM327");
 
     tft.setTextSize(1);
-    tft.fillScreen(TFT_BLACK);
-    tft.setTextColor(TFT_RED, TFT_BLACK);
+    //tft.fillScreen(TFT_BLACK);
+    //tft.setTextColor(TFT_RED, TFT_BLACK);
     
     //tft.drawString("Rpm", X1, Y1,   4);
     //tft.drawString("----",X1 ,Y1+20, FONT_N);
@@ -128,6 +125,7 @@ void setup()
     //tft.drawString("Vss", X2, Y2,   4);
     //tft.drawString("---", X2, Y2+20, FONT_N);
     myELM327.sendCommand_Blocking(HEADERS_ON);
+    tft.fillScreen(TFT_BLACK);
     tft.drawRect(75,0,90,135,TFT_DARKGREY);
 }
 
@@ -200,16 +198,15 @@ void loop()
       req = obdcustom_subaru_oil(&oil);
       if(REQ_OK == req)
       {
-        //DRAW
-       
+        
         GuiBox_draw(OIL, oil);
-        Scheduler_release(); //obd_state = ENG_RPM;
+        Scheduler_release(); 
       }
       else if(REQ_E_FAIL == req)
       {
         //no draw
-         GuiBox_draw(OIL, 0);
-        Scheduler_release(); //obd_state = ENG_RPM;
+        GuiBox_draw(OIL, 1);
+        Scheduler_release(); 
       }
       else
       {
@@ -223,12 +220,12 @@ void loop()
       if (myELM327.nb_rx_state == ELM_SUCCESS)
       {
         GuiBox_draw(COOLANT, cool);
-        Scheduler_release(); //obd_state = ENG_RPM;
+        Scheduler_release(); 
       }
       else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
       {
         myELM327.printError();
-        Scheduler_release(); //obd_state = OIL;
+        Scheduler_release(); 
       } 
       break;
     }
