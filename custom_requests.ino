@@ -12,6 +12,18 @@ int nb_query_state = SEND_COMMAND;
 int cycles_count = 0;
 const int cycles_max = 20; 
 
+uint8_t hexCharToValue(char c) {
+  if (c >= '0' && c <= '9') {
+    return c - '0';
+  } else if (c >= 'A' && c <= 'F') {
+    return c - 'A' + 10;
+  } else if (c >= 'a' && c <= 'f') {
+    return c - 'a' + 10;
+  } else {
+    return 0xFF; // Invalid input
+  }
+}
+
 req_states obdcustom_subaru_oil( float * value)
 {
     req_state = REQ_E_WAIT;
@@ -43,7 +55,7 @@ req_states obdcustom_subaru_oil( float * value)
             }
             else
             {
-                Serial.println(myELM327.nb_rx_state);
+                //Serial.println(myELM327.nb_rx_state);
             }
             
         break;
@@ -62,13 +74,16 @@ req_states obdcustom_subaru_oil( float * value)
             
             if (myELM327.nb_rx_state == ELM_SUCCESS)    // Our response is fully received, let's get our data
             {      
-                #if 1
-                byte rawValue = myELM327.payload[0];
-                *value = (float)rawValue - 40.0;        // Print the adjusted value
-                nb_query_state = SEND_COMMAND;          // Reset the query state for the next command
-                req_stage = STEP_RESTORE_HEADER;
-                //delay(5000);                            // Wait 5 seconds until we query again
-                #endif
+
+                if (myELM327.recBytes > 10)
+                {
+                        byte rawValue = hexCharToValue(myELM327.payload[74]); 
+                        byte rawValue2 = hexCharToValue(myELM327.payload[75]);
+                        byte conValue = rawValue<<4 + rawValue2;
+                        *value = (float)conValue - 40.0;        // Print the adjusted value
+                        nb_query_state = SEND_COMMAND;          // Reset the query state for the next command
+                        req_stage = STEP_RESTORE_HEADER;
+                 }
 
             }
             else if (myELM327.nb_rx_state != ELM_GETTING_MSG)

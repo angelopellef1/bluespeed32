@@ -8,23 +8,27 @@
  * @version 1.0
  */
 
-
-
 #define REQUEST_N   PID_N
-
 bool released = true;
 
 /**
  * tack_ticker
  * Containts init values
+    ENG_RPM,
+    SPEED,
+    GEAR_C,
+    OIL,
+    COOLANT,
+    PID_N
  */
+ //modififiend scheduler ticks for test on oil and custom header
  const uint32_t task_ticker[REQUEST_N] = 
  {
-    1,
-    1,
-    1,
-    60,
-    30
+    9999,
+    9999,
+    9999,
+    10,
+    9999,
  };
 
  /**
