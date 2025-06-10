@@ -80,7 +80,7 @@ void setup()
     // Init communication
     //tft.fillRect(0,0,40,5,TFT_BLUE);
     //GUI_Splash("AP Hud BRZ",0,0, 4, TFT_BLACK, 0xFEE0);
-    GUI_DrawImage_Splash();
+    GUI_FirstSplash();
 
   
     DEBUG_PORT.begin(115200);
@@ -94,15 +94,16 @@ void setup()
             ;
     }
 
-    GUI_Move_Splash();
+    GUI_MoveSplash();
 
     //bt OK, comm with ELM327
     //tft.fillRect(0,0,40,5,TFT_GREEN);
     //GUI_Splash("Ready to Race",0,0, 4, 0x0176, TFT_WHITE);
-    tft.fillScreen(TFT_BLACK);
-    tft.setTextColor(TFT_DARKGREY, TFT_BLACK);
-    tft.setTextSize(1);
-    tft.drawString("Ready to Race ..", 10, 60,   4);
+    //tft.fillScreen(TFT_BLACK);
+    //tft.setTextColor(TFT_DARKGREY, TFT_BLACK);
+    //tft.setTextSize(1);
+    //tft.drawString("Ready to Race ..", 10, 60,   4);
+    GUI_ConnectedSplash("Ready to Race",0,0,1,TFT_BLACK, TFT_DARKGREY);
 
     if (!myELM327.begin(ELM_PORT, true, 2000))
     {

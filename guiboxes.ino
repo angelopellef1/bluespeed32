@@ -72,7 +72,7 @@ typedef struct
  };
 
 
-void GUI_DrawImage_Splash() 
+void GUI_FirstSplash() 
 {
     img.createSprite(240, 135);
     img.setTextWrap(false); 
@@ -83,10 +83,11 @@ void GUI_DrawImage_Splash()
     // Set text coordinate datum to middle centre
     img.setTextDatum(MC_DATUM);
     // Draw the number in middle of 80 x 50 sprite
-    img.setTextSize(2);           // Font size scaling is x1
+    img.setTextSize(1);           // Font size scaling is x1
     img.setTextColor(TFT_DARKGREY);  // White text, no background colour
-    img.drawString("APHUD", 180,80);
-    img.drawString("Subaru BRZ", 150,105);
+    img.setFreeFont(&Orbitron_Light_24);  // Select free font Formula1_Bold_web_020pt7bBitmaps
+    img.drawString("APHUD", 180,45);
+    img.drawString("BRZ", 200,70);
 
     // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
     img.pushSprite(0, 0);
@@ -96,9 +97,9 @@ void GUI_DrawImage_Splash()
 
 }
 
-void GUI_Move_Splash() 
+void GUI_MoveSplash() 
 {
-    for(int i = 0; i<240;i++)
+    for(int i = 0; i<200;i++)
     {
          img.pushSprite(i, 0);
     }
@@ -106,22 +107,25 @@ void GUI_Move_Splash()
 }
 
 
-void GUI_Splash(String  text, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
+void GUI_ConnectedSplash(String  text, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
 {
 
-    img.createSprite(240, 135);
+    img.createSprite(200, 135);
     img.setTextWrap(false); 
     // Fill it with black
     img.fillSprite(color_bkg);
+
+
+
     // Set the font parameters
-    img.setTextSize(2);           // Font size scaling is x1
+    img.setTextSize(1);           // Font size scaling is x1
     //img.setFreeFont(&FreeSerifBoldItalic24pt7b);  // Select free font
     img.setTextColor(color_text);  // White text, no background colour
 
     // Set text coordinate datum to middle centre
     img.setTextDatum(MC_DATUM);
     img.setFreeFont(&Orbitron_Light_24);  // Select free font Formula1_Bold_web_020pt7bBitmaps
-    img.drawString(text+"\0", 20, 67,font_size);
+    img.drawString(text+"\0", 10, 67,font_size);
 
     // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
     img.pushSprite(x, y);
