@@ -77,9 +77,9 @@ req_states obdcustom_subaru_oil( float * value)
 
                 if (myELM327.recBytes > 10)
                 {
-                        byte rawValue = hexCharToValue(myELM327.payload[74]); 
-                        byte rawValue2 = hexCharToValue(myELM327.payload[75]);
-                        byte conValue = rawValue<<4 + rawValue2;
+                        byte rawValue = hexCharToValue(myELM327.payload[71]); 
+                        byte rawValue2 = hexCharToValue(myELM327.payload[72]);
+                        byte conValue = rawValue<<4 | rawValue2;
                         *value = (float)conValue - 40.0;        // Print the adjusted value
                         nb_query_state = SEND_COMMAND;          // Reset the query state for the next command
                         req_stage = STEP_RESTORE_HEADER;

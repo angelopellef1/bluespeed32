@@ -46,7 +46,7 @@ typedef enum {
   PID_N
 } obd_pid_states;
 
-obd_pid_states obd_state = OIL;
+obd_pid_states obd_state = ENG_RPM;
 
 const int UNDEFINED_GEAR = 9;
 

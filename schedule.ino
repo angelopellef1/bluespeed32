@@ -24,11 +24,11 @@ bool released = true;
  //modififiend scheduler ticks for test on oil and custom header
  const uint32_t task_ticker[REQUEST_N] = 
  {
-    9999,
-    9999,
-    9999,
-    10,
-    9999,
+    1,
+    1,
+    1,
+    60,
+    30
  };
 
  /**
