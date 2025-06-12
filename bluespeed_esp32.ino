@@ -94,8 +94,6 @@ void setup()
             ;
     }
 
-#ifndef SIMULATION_OBD
-
     GUI_MoveSplash();
 
     //bt OK, comm with ELM327
@@ -106,12 +104,6 @@ void setup()
     //tft.setTextSize(1);
     //tft.drawString("Ready to Race ..", 10, 60,   4);
     GUI_ConnectedSplash("Ready to Race",0,0,1,TFT_BLACK, TFT_DARKGREY);
-#else
-
-    GUI_MoveSplash();
-    GUI_ConnectedSplash("Simulation",0,0,1,TFT_BLACK, TFT_GREEN);
-
-#endif //END simulation_obd
 
     if (!myELM327.begin(ELM_PORT, true, 2000))
     {

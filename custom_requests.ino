@@ -64,33 +64,22 @@ req_states obdcustom_subaru_oil( float * value)
 
             if (nb_query_state == SEND_COMMAND)         // We are ready to send a new command
             {
-#ifndef SIMULATION_OBD
                 myELM327.sendCommand("2101");         // Send the custom PID commnad
-#else
-                myELM327.sendCommand_fake("2101");         // Send the custom PID commnad
-#endif
                 nb_query_state = WAITING_RESP;          // Set the query state so we are waiting for response
             }
             else if (nb_query_state == WAITING_RESP)    // Our query has been sent, check for a response
             {
-#ifndef SIMULATION_OBD
-                myELM327.get_response();
-#else
-                myELM327.get_response_test();                // Each time through the loop we will check again
-#endif
+                myELM327.get_response();                // Each time through the loop we will check again
             }
             
             if (myELM327.nb_rx_state == ELM_SUCCESS)    // Our response is fully received, let's get our data
             {      
 
-                //if (myELM327.recBytes > 10)
+                if (myELM327.recBytes > 10)
                 {
-                        byte rawValue = hexCharToValue(myELM327.payload[71]); 
-                        Serial.println("by71 " + String(myELM327.payload[71]));
-                        byte rawValue2 = hexCharToValue(myELM327.payload[72]);
-                        Serial.println("by71 " + String(myELM327.payload[72]));
-
-                        byte conValue = rawValue<<4 | rawValue2;
+                        byte rawValue = hexCharToValue(myELM327.payload[74]); 
+                        byte rawValue2 = hexCharToValue(myELM327.payload[75]);
+                        byte conValue = rawValue<<4 + rawValue2;
                         *value = (float)conValue - 40.0;        // Print the adjusted value
                         nb_query_state = SEND_COMMAND;          // Reset the query state for the next command
                         req_stage = STEP_RESTORE_HEADER;
