@@ -11,6 +11,7 @@
 
  #include <TFT_eSPI.h> // Graphics and font library for ILI9341 driver chip
  #include "aphud.h"
+ #include "Formula1_Bold_web_048pt7b.h"
 
 #define TFT_C_DARKBLUE  0x0176
 #define TFT_C_YELLORANCE 0xFEE0
@@ -148,15 +149,15 @@ void DrawNumberBox_Big(String  num, int x, int y, int font_size, uint16_t color_
 
 
     // Set the font parameters
-    img.setTextSize(3);           // Font size scaling is x1
-    img.setFreeFont(&Orbitron_Light_24);  // Select free font Formula1_Bold_web_020pt7bBitmaps
-    img.setTextColor(color_text);  // White text, no background colour
+    img.setTextSize(1);                             // Font size scaling is x1
+    img.setFreeFont(&Formula1_Bold_web_048pt7b);    //Orbitron_Light_24); 
+    img.setTextColor(color_text);  
 
     // Set text coordinate datum to middle centre
     img.setTextDatum(ML_DATUM);
 
     // Draw the number in middle of 80 x 50 sprite
-    img.drawString(num+"\0", 0, 60);
+    img.drawString(num + String(" "), 0, 60);
 
     // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
     img.pushSprite(x, y);
@@ -246,7 +247,7 @@ void GuiColors_get(obd_pid_states pi, float in_value, uint16_t * bkg, uint16_t *
 
             if(data == UNDEFINED_VALUE)
             {
-                Sdata = "-";
+                Sdata = "";
             }
             else
             {
