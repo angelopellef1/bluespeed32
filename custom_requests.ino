@@ -62,36 +62,51 @@ req_states obdcustom_subaru_oil( float * value)
     
         case STEP_PID:
 
-            if (nb_query_state == SEND_COMMAND)         // We are ready to send a new command
+            if (nb_query_state == SEND_COMMAND) 
             {
-                myELM327.sendCommand("2101");         // Send the custom PID commnad
-                nb_query_state = WAITING_RESP;          // Set the query state so we are waiting for response
+                myELM327.sendCommand("2101"); 
+                nb_query_state = WAITING_RESP;         
             }
-            else if (nb_query_state == WAITING_RESP)    // Our query has been sent, check for a response
+            else if (nb_query_state == WAITING_RESP) 
             {
-                myELM327.get_response();                // Each time through the loop we will check again
+                myELM327.get_response(); 
             }
             
-            if (myELM327.nb_rx_state == ELM_SUCCESS)    // Our response is fully received, let's get our data
+            if (myELM327.nb_rx_state == ELM_SUCCESS)
             {      
 
                 if (myELM327.recBytes > 10)
                 {
-                        byte rawValue = hexCharToValue(myELM327.payload[71]); 
-                        byte rawValue2 = hexCharToValue(myELM327.payload[72]);
+                    /*Byte 14 of python script analisys
+                        These are char
+                        7E8     10 1F 61 01 64 00 46 02
+                        7E8     21 88 29 4C 4C 64>51<13
+                        7E8     22 1D 00 00 24 0C 2A 54
+                        7E8     23 22 21 00 FF 27 BD 3B
+                        7E8     24 3D 37 AA 4C 00 00 00
+                        But elmduino lib counts all byte including \r 
+                        So
+                        7E8101F610164004602r
+                        7E82188294C4C645113r    36 and 37 are chars of byte value 51 taken as example
+                        7E8221D0000240C2A54r
+                        7E823222100FF27BD3Br
+                        7E8243D37AA4C000000r
+                    */
+                        byte rawValue = hexCharToValue(myELM327.payload[36]); 
+                        byte rawValue2 = hexCharToValue(myELM327.payload[37]);
                         byte conValue = rawValue<<4 | rawValue2;
-                        *value = (float)conValue - 40.0;        // Print the adjusted value
-                        nb_query_state = SEND_COMMAND;          // Reset the query state for the next command
+                        *value = (float)conValue - 40.0;        
+                        nb_query_state = SEND_COMMAND;          
                         req_stage = STEP_RESTORE_HEADER;
                  }
 
             }
             else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
-            {                                           // If state == ELM_GETTING_MSG, response is not yet complete. Restart the loop.
-                nb_query_state = SEND_COMMAND;          // Reset the query state for the next command
+            {                                                       // If state == ELM_GETTING_MSG, response is not yet complete. Restart the loop.
+                nb_query_state = SEND_COMMAND;                      // Reset the query state for the next command
                 req_stage = STEP_RESTORE_HEADER;
                 myELM327.printError();
-                //delay(5000);                            // Wait 5 seconds until we query again
+                //delay(5000);                                       // Wait 5 seconds until we query again
             }
             else
             {
@@ -102,12 +117,12 @@ req_states obdcustom_subaru_oil( float * value)
         case STEP_RESTORE_HEADER:
             if (myELM327.nb_rx_state != ELM_GETTING_MSG)
             {
-                myELM327.sendCommand_Blocking("AT SH 7DF");  // Restore default header
+                myELM327.sendCommand_Blocking("AT SH 7DF");         // Restore default header
             }
 
             if (myELM327.nb_rx_state == ELM_SUCCESS)
             {
-                req_stage = STEP_CHANGE_HEADER; //reset machine
+                req_stage = STEP_CHANGE_HEADER;                     //reset machine
                 req_state = REQ_OK;
             }
 
