@@ -75,6 +75,8 @@ String Svss = "";
 String Sgear = "";
 String Soil = "";
 
+int gui_bytepos = 0;
+
 void IRAM_ATTR handleButtonInterrupt() {
   buttonPressed = true;
 }
@@ -183,14 +185,7 @@ void loop()
       lastDebounceTime = currentTime;
       buttonPressed = false;
 
-      // Toggle brightness
-      if (isFullBrightness) {
-        ledcWrite(ledChannel, 100);  // 40
-      } else {
-        ledcWrite(ledChannel, 255);  // 100%
-      }
-
-      isFullBrightness = !isFullBrightness;
+      gui_bytepos = test_dec_bytepos();
       
     } 
     else 
@@ -234,7 +229,7 @@ void loop()
       Svss = String(kmh,0);
       if (myELM327.nb_rx_state == ELM_SUCCESS)
       {
-        GuiBox_draw(SPEED, kmh);
+        GuiBox_draw(SPEED, gui_bytepos); //TESSSSSTTTTT, show bytepos
         Scheduler_release(); //obd_state = ENG_RPM;
       }
       else if (myELM327.nb_rx_state != ELM_GETTING_MSG)

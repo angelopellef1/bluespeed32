@@ -28,7 +28,7 @@ bool released = true;
     1,
     1,
     60,
-    30
+    5
  };
 
  /**

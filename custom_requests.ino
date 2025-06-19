@@ -103,10 +103,10 @@ req_states obdcustom_subaru_oil( float * value)
                         7E823222100FF27BD3Br
                         7E8243D37AA4C000000r
                     */
-                        byte rawValue = hexCharToValue(myELM327.payload[92]); 
-                        byte rawValue2 = hexCharToValue(myELM327.payload[93]);
-                        byte conValue = (rawValue<<4)&0xF0 ;
-                        conValue |= (0x0F & rawValue2);
+                        rawValue = hexCharToValue(myELM327.payload[bytepos]); 
+                        rawValue2 = hexCharToValue(myELM327.payload[bytepos+1]);
+                        conValue = (int16_t)((rawValue<<4)&0xF0) ;
+                        conValue |= (int16_t)(0x0F & rawValue2);
                         conValue -= 40;
                         *value = (float)conValue;        
                         nb_query_state = SEND_COMMAND;          
