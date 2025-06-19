@@ -8,6 +8,25 @@
 
 #include "Formula1_Bold_web_020pt7b.h"
 
+
+#define S1_PIN 0        // Change to your S1 button GPIO
+#define TFT_BL 4        // Backlight control pin (PWM capable)
+
+// PWM settings
+const int freq = 5000;
+const int ledChannel = 0;
+const int resolution = 8;
+
+volatile bool buttonPressed = false;
+
+volatile bool toggleBrightness = false;
+bool isFullBrightness = true;
+
+unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 500;  // 500 ms
+
+
+
 TFT_eSPI tft = TFT_eSPI(); 
 
 TFT_eSprite img = TFT_eSprite(&tft);
@@ -43,7 +62,8 @@ typedef enum {
   GEAR_C,
   OIL,
   COOLANT,
-  PID_N
+  PID_N,
+  V_ENG_RPM
 } obd_pid_states;
 
 obd_pid_states obd_state = ENG_RPM;
@@ -54,6 +74,10 @@ String Srpm = "";
 String Svss = "";
 String Sgear = "";
 String Soil = "";
+
+void IRAM_ATTR handleButtonInterrupt() {
+  buttonPressed = true;
+}
 
 int digitCount(int num) {
   if (num == 0) return 1;
@@ -76,6 +100,17 @@ void setup()
     tft.init();
     tft.setRotation(1);
     tft.fillScreen(TFT_BLACK);
+
+    // Set up TFT
+    ledcSetup(ledChannel, freq, resolution);
+    ledcAttachPin(TFT_BL, ledChannel);
+
+    // Initial brightness
+    ledcWrite(ledChannel, 255);  // 100%
+
+    // Button setup
+    pinMode(S1_PIN, INPUT_PULLUP);  // Assuming active LOW
+    attachInterrupt(digitalPinToInterrupt(S1_PIN), handleButtonInterrupt, FALLING);
     
     // Init communication
     //tft.fillRect(0,0,40,5,TFT_BLUE);
@@ -127,7 +162,9 @@ void setup()
     //tft.drawString("---", X2, Y2+20, FONT_N);
     myELM327.sendCommand_Blocking(HEADERS_ON);
     tft.fillScreen(TFT_BLACK);
-    tft.drawRect(75,0,90,135,TFT_DARKGREY);
+    //tft.drawRect(75,0,90,135,TFT_DARKGREY);
+    //textBox("RPM", 0, 48, 1, TFT_DARKGREY,TFT_BLACK);
+    //textBox("Oil", 0, 80, 1, TFT_DARKGREY,TFT_BLACK);
 }
 
 void loop()
@@ -136,6 +173,32 @@ void loop()
   req_states req = REQ_OK;
 
   static int oil_freq = 30;
+
+
+  if (buttonPressed) 
+  {
+    unsigned long currentTime = millis();
+    if (currentTime - lastDebounceTime > debounceDelay) 
+    {
+      lastDebounceTime = currentTime;
+      buttonPressed = false;
+
+      // Toggle brightness
+      if (isFullBrightness) {
+        ledcWrite(ledChannel, 100);  // 40
+      } else {
+        ledcWrite(ledChannel, 255);  // 100%
+      }
+
+      isFullBrightness = !isFullBrightness;
+      
+    } 
+    else 
+    {
+      // Debounce: ignore this press
+      buttonPressed = false;
+    }
+  }
 
 
   obd_state = Scheduler_task_calculate(obd_state);
@@ -151,6 +214,8 @@ void loop()
       if (myELM327.nb_rx_state == ELM_SUCCESS)
       {
         GuiBox_draw(ENG_RPM, rpm);
+        GuiBox_draw(V_ENG_RPM, rpm);
+
        
         Scheduler_release(); //obd_state = SPEED;
       }

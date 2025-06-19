@@ -80,10 +80,10 @@ req_states obdcustom_subaru_oil( float * value)
                     /*Byte 14 of python script analisys
                         These are char
                         7E8     10 1F 61 01 64 00 46 02
-                        7E8     21 88 29 4C 4C 64>51<13
+                        7E8     21 88 29 4C 4C 64 51 13
                         7E8     22 1D 00 00 24 0C 2A 54
                         7E8     23 22 21 00 FF 27 BD 3B
-                        7E8     24 3D 37 AA 4C 00 00 00
+                        7E8     24 3D 37 AA>4C<00 00 00
                         But elmduino lib counts all byte including \r 
                         So
                         7E8101F610164004602r
@@ -92,10 +92,12 @@ req_states obdcustom_subaru_oil( float * value)
                         7E823222100FF27BD3Br
                         7E8243D37AA4C000000r
                     */
-                        byte rawValue = hexCharToValue(myELM327.payload[36]); 
-                        byte rawValue2 = hexCharToValue(myELM327.payload[37]);
-                        byte conValue = rawValue<<4 | rawValue2;
-                        *value = (float)conValue - 40.0;        
+                        byte rawValue = hexCharToValue(myELM327.payload[92]); 
+                        byte rawValue2 = hexCharToValue(myELM327.payload[93]);
+                        byte conValue = (rawValue<<4)&0xF0 ;
+                        conValue |= (0x0F & rawValue2);
+                        conValue -= 40;
+                        *value = (float)conValue;        
                         nb_query_state = SEND_COMMAND;          
                         req_stage = STEP_RESTORE_HEADER;
                  }

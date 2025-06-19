@@ -42,7 +42,7 @@ import math
 import matplotlib.pyplot as plt
 
 def plot_byte_evolution(byte_blocks):
-    selected_indices = [15,14]  # only plot byte 28 and 29 (0-based) SEMBRA IL BYTE 14
+    selected_indices = [35,36,37,38,39] #is byte 36 of this grouping!!! for sure, the last non zero couple of nibble
 
     plt.figure(figsize=(8, 8), dpi=100)  # 800x800 pixels
 
@@ -51,7 +51,8 @@ def plot_byte_evolution(byte_blocks):
             block[byte_index] if byte_index < len(block) else None
             for block in byte_blocks
         ]
-        plt.plot(byte_values, label=f'Byte {byte_index}', marker='o')
+        byte_values_40 = [x - 40 for x in byte_values]
+        plt.plot(byte_values_40, label=f'Byte {byte_index}', marker='o')
 
     plt.title("Byte 14")
     plt.xlabel("Block Index")
@@ -65,7 +66,7 @@ def plot_byte_evolution(byte_blocks):
 
 
 # === MAIN SCRIPT ===
-filename = "C:\\Users\\AngeloP\\Downloads\\megalog_clean.txt"  
+filename = "C:\\Users\\AngeloP\\Downloads\\16guigno_clean_partial.txt"  
 blocks = parse_blocks(filename)
 byte_blocks = blocks_to_bytes(blocks)
 plot_byte_evolution(byte_blocks)
