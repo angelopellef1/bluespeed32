@@ -165,8 +165,8 @@ void setup()
     myELM327.sendCommand_Blocking(HEADERS_ON);
     tft.fillScreen(TFT_BLACK);
     //tft.drawRect(75,0,90,135,TFT_DARKGREY);
-    //textBox("RPM", 0, 48, 1, TFT_DARKGREY,TFT_BLACK);
-    //textBox("Oil", 0, 80, 1, TFT_DARKGREY,TFT_BLACK);
+    textBox("RPM", 0, 48, 1, TFT_DARKGREY,TFT_BLACK);
+    textBox("Oil", 0, 116, 1, TFT_DARKGREY,TFT_BLACK);
 }
 
 void loop()
