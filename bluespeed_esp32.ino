@@ -75,8 +75,6 @@ String Svss = "";
 String Sgear = "";
 String Soil = "";
 
-int gui_bytepos = 0;
-
 void IRAM_ATTR handleButtonInterrupt() {
   buttonPressed = true;
 }
@@ -133,14 +131,7 @@ void setup()
 
     GUI_MoveSplash();
 
-    //bt OK, comm with ELM327
-    //tft.fillRect(0,0,40,5,TFT_GREEN);
-    //GUI_Splash("Ready to Race",0,0, 4, 0x0176, TFT_WHITE);
-    //tft.fillScreen(TFT_BLACK);
-    //tft.setTextColor(TFT_DARKGREY, TFT_BLACK);
-    //tft.setTextSize(1);
-    //tft.drawString("Ready to Race ..", 10, 60,   4);
-    GUI_ConnectedSplash("Ready to Race",0,0,1,TFT_BLACK, TFT_DARKGREY);
+    GUI_ConnectedSplash("Get Ready ",0,0,1,TFT_BLACK, TFT_DARKGREY);
 
     if (!myELM327.begin(ELM_PORT, true, 2000))
     {
@@ -154,19 +145,12 @@ void setup()
     DEBUG_PORT.println("Connected to ELM327");
 
     tft.setTextSize(1);
-    //tft.fillScreen(TFT_BLACK);
-    //tft.setTextColor(TFT_RED, TFT_BLACK);
-    
-    //tft.drawString("Rpm", X1, Y1,   4);
-    //tft.drawString("----",X1 ,Y1+20, FONT_N);
-
-    //tft.drawString("Vss", X2, Y2,   4);
-    //tft.drawString("---", X2, Y2+20, FONT_N);
     myELM327.sendCommand_Blocking(HEADERS_ON);
     tft.fillScreen(TFT_BLACK);
-    //tft.drawRect(75,0,90,135,TFT_DARKGREY);
-    textBox("RPM", 0, 48, 1, TFT_DARKGREY,TFT_BLACK);
-    textBox("Oil", 0, 116, 1, TFT_DARKGREY,TFT_BLACK);
+
+
+    GUI_DataHeaders();
+
 }
 
 void loop()
@@ -185,7 +169,14 @@ void loop()
       lastDebounceTime = currentTime;
       buttonPressed = false;
 
-      gui_bytepos = test_dec_bytepos();
+      // Toggle brightness
+      if (isFullBrightness) {
+        ledcWrite(ledChannel, 100);  // 40
+      } else {
+        ledcWrite(ledChannel, 255);  // 100%
+      }
+
+      isFullBrightness = !isFullBrightness;
       
     } 
     else 
@@ -210,8 +201,6 @@ void loop()
       {
         GuiBox_draw(ENG_RPM, rpm);
         GuiBox_draw(V_ENG_RPM, rpm);
-
-       
         Scheduler_release(); //obd_state = SPEED;
       }
       else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
@@ -229,13 +218,13 @@ void loop()
       Svss = String(kmh,0);
       if (myELM327.nb_rx_state == ELM_SUCCESS)
       {
-        GuiBox_draw(SPEED, gui_bytepos); //TESSSSSTTTTT, show bytepos
-        Scheduler_release(); //obd_state = ENG_RPM;
+        GuiBox_draw(SPEED, kmh); 
+        Scheduler_release();
       }
       else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
       {
         myELM327.printError();
-        Scheduler_release(); //obd_state = OIL;
+        Scheduler_release(); 
       } 
       break;
     }

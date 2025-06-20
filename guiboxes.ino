@@ -15,6 +15,7 @@
 #include "CardotSemibold7pt7b.h"
 #include "CardotSemibold22pt7b.h"
 #include "CardotSemibold12pt7b.h"
+#include "CardotSemibold14pt7b.h"
 #include "CardotSemibold42pt7b.h"
 #include "CardotSemibold48pt7b.h"
 
@@ -26,12 +27,22 @@
 #define TFT_C_ORANGE_D  0xfa80
 
 
+#define GB_TEXTBOX_H 16
+#define GB_MNUMBOX_H 34
+
+#define GB_MNUMBOX_W 75
+
+#define GB_BNUMBOX_W 85
+#define GB_BNUMBOX_H 133 
+
+
 
 
 typedef enum 
 {
     GB_BIG,
     GB_MEDIUM,
+    GB_MEDIUM_RT,
     GB_SMALL,
     GB_WIDELINE
 }boxtypes;
@@ -72,14 +83,28 @@ typedef struct
 
 
 #if 1
+// gerar on the LEFT
+ const guiboxes_t guiboxes[MAX_GUIBOXES] = 
+ {
+    {ENG_RPM,   GB_MEDIUM_RT,   GB_BNUMBOX_W + GB_MNUMBOX_W +2,       4,      4},
+    {SPEED,     GB_MEDIUM,      GB_BNUMBOX_W + 1,                        4,      4},
+    {GEAR_C,    GB_BIG,         0,                                      4,      4}, 
+    {OIL,       GB_MEDIUM,      GB_BNUMBOX_W + 1,                       81,      4},
+    {COOLANT,   GB_MEDIUM,      GB_BNUMBOX_W + 1 + GB_MNUMBOX_W +2 ,     81,      4},
+    {V_ENG_RPM, GB_WIDELINE,    0,                                     0,       4}
+ };
+#endif
 
+
+#if 0
+// gerar on the right
  const guiboxes_t guiboxes[MAX_GUIBOXES] = 
  {
     {ENG_RPM,   GB_MEDIUM,  0,4,    4},
-    {SPEED,     GB_MEDIUM,  76,4,    4},
+    {SPEED,     GB_MEDIUM,  GB_MNUMBOX_W,4,    4},
     {GEAR_C,    GB_BIG,     154,4,    4}, //ok
     {OIL,       GB_MEDIUM,  0,82,    4},
-    {COOLANT,   GB_MEDIUM,  76,82,    4},
+    {COOLANT,   GB_MEDIUM,  GB_MNUMBOX_W,82,    4},
     {V_ENG_RPM, GB_WIDELINE, 0,0, 4}
  };
 #endif
@@ -126,6 +151,7 @@ void GUI_FirstSplash()
     img.setFreeFont(&Orbitron_Light_24);  // Select free font Formula1_Bold_web_020pt7bBitmaps
     img.drawString("APHUD", 180,45);
     img.drawString("BRZ", 200,70);
+    img.drawString("v0.9", 200,95);
 
     // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
     img.pushSprite(0, 0);
@@ -152,60 +178,73 @@ void GUI_ConnectedSplash(String  text, int x, int y, int font_size, uint16_t col
     img.setTextWrap(false); 
     // Fill it with black
     img.fillSprite(color_bkg);
-
-
-
-    // Set the font parameters
     img.setTextSize(1);           // Font size scaling is x1
-    //img.setFreeFont(&FreeSerifBoldItalic24pt7b);  // Select free font
-    img.setTextColor(color_text);  // White text, no background colour
+    img.setTextColor(color_text);  
 
-    // Set text coordinate datum to middle centre
     img.setTextDatum(MC_DATUM);
-    img.setFreeFont(&CardotSemibold7pt7b);  // Select free font Formula1_Bold_web_020pt7bBitmaps
-    img.drawString(text+"\0", 10, 67,font_size);
-
-    // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
+    img.setFreeFont(&CardotSemibold12pt7b);  
+    img.drawString(text, 10, 67,font_size);
     img.pushSprite(x, y);
-
-    // Delete sprite to free up the RAM
     img.deleteSprite();
-    
 }
 
+void GUI_DataHeaders()
+{
+    textBox("KMH",
+            GB_BNUMBOX_W +1 , 
+            4 + GB_MNUMBOX_H , 
+            1, 
+            TFT_DARKGREY,TFT_BLACK);
+
+    textBox("RPM",
+            GB_BNUMBOX_W +1+ GB_MNUMBOX_W+1 , 
+            4 + GB_MNUMBOX_H , 
+            1, 
+            TFT_DARKGREY,TFT_BLACK);
+
+
+    textBox("Oil",
+            GB_BNUMBOX_W +1 , 
+            81 + 4 + GB_MNUMBOX_H , 
+            1, 
+            TFT_DARKGREY,TFT_BLACK);
+
+    textBox("Cool",
+            GB_BNUMBOX_W +1+ GB_MNUMBOX_W+1 , 
+            81 + 4 + GB_MNUMBOX_H , 
+            1, 
+            TFT_DARKGREY,TFT_BLACK);        
+}
 
 
 void DrawNumberBox_Big(String  num, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
 {
-    // Create a sprite 80 pixels wide, 50 high (8kbytes of RAM needed)
     img.createSprite(85, 133);
     img.setTextWrap(false); 
-    // Fill it with black
     img.fillSprite(color_bkg);
 
-
-
-    // Set the font parameters
     img.setTextSize(1);                             // Font size scaling is x1
     img.setFreeFont(&CardotSemibold48pt7b);    //Orbitron_Light_24); 
     img.setTextColor(color_text);  
 
-    // Set text coordinate datum to middle centre
+
     img.setTextDatum(MC_DATUM);
 
-    // Draw the number in middle of 80 x 50 sprite
-    img.drawString(num , 0, 40);
+
+    img.drawString(num + String(" ") , 0, 50);
+
+    img.setFreeFont(&CardotSemibold7pt7b);    //Orbitron_Light_24); 
+    img.drawString("Gear", 0, 81 + 4 + GB_MNUMBOX_H);
 
     // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
     img.pushSprite(x, y);
 
-    // Delete sprite to free up the RAM
     img.deleteSprite();
 }
 
 void textBox(String  txt, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
 {
-    img.createSprite(76, 16);
+    img.createSprite(GB_MNUMBOX_W, GB_TEXTBOX_H);
     img.setTextWrap(false); 
     img.fillSprite(color_bkg);
     img.setTextDatum(MC_DATUM);
@@ -237,28 +276,30 @@ void wideline(float  data, int x, int y,  uint16_t color_bkg, uint16_t color_tex
 
 
 
-void numberBox(String  num, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
+void numberBox_rt(String  num, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
 {
-  // Create a sprite 80 pixels wide, 50 high (8kbytes of RAM needed)
-    img.createSprite(76, 34);
+    img.createSprite(GB_MNUMBOX_W, GB_MNUMBOX_H);
     img.setTextWrap(false); 
-    // Fill it with black
     img.fillSprite(color_bkg);
-
-
-    // Set the font parameters
-    //img.setTextSize(1);           // Font size scaling is x1
-    img.setFreeFont(&CardotSemibold12pt7b);    //Orbitron_Light_24); 
-    img.setTextColor(color_text);  // White text, no background colour
-
-    // Set text coordinate datum to middle centre
+    img.setFreeFont(&CardotSemibold12pt7b);    
+    img.setTextColor(color_text);  
     img.setTextDatum(MC_DATUM);
     img.drawString(num, 34, 14);
-
-    // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
     img.pushSprite(x, y);
+    img.deleteSprite();
+}
 
-    // Delete sprite to free up the RAM
+
+void numberBox(String  num, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
+{
+    img.createSprite(GB_MNUMBOX_W, GB_MNUMBOX_H);
+    img.setTextWrap(false); 
+    img.fillSprite(color_bkg);
+    img.setFreeFont(&CardotSemibold14pt7b);    
+    img.setTextColor(color_text);  
+    img.setTextDatum(MC_DATUM);
+    img.drawString(num, 34, 14);
+    img.pushSprite(x, y);
     img.deleteSprite();
 }
 
@@ -328,6 +369,10 @@ void GuiColors_get(obd_pid_states pi, float in_value, uint16_t * bkg, uint16_t *
             else if(guiboxes[i].gb_type == GB_MEDIUM)
             {
                 numberBox(Sdata, guiboxes[i].x,  guiboxes[i].y,  guiboxes[i].text_size, bkgr, textc );
+            }
+            else if(guiboxes[i].gb_type == GB_MEDIUM_RT)
+            {
+                numberBox_rt(Sdata, guiboxes[i].x,  guiboxes[i].y,  guiboxes[i].text_size, bkgr, textc );
             }
             else if(guiboxes[i].gb_type == GB_WIDELINE)
             {
