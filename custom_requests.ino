@@ -12,6 +12,17 @@ int nb_query_state = SEND_COMMAND;
 int cycles_count = 0;
 const int cycles_max = 20; 
 
+uint8_t rawValue,rawValue2;
+int16_t conValue;
+
+static int bytepos = 87; //found from real world testing
+
+int test_dec_bytepos(void)
+{
+    bytepos--;
+    return bytepos;
+}
+
 uint8_t hexCharToValue(char c) {
   if (c >= '0' && c <= '9') {
     return c - '0';
