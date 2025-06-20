@@ -9,9 +9,15 @@
  */
 
 
- #include <TFT_eSPI.h> // Graphics and font library for ILI9341 driver chip
- #include "aphud.h"
- #include "Formula1_Bold_web_048pt7b.h"
+#include <TFT_eSPI.h> // Graphics and font library for ILI9341 driver chip
+#include "aphud.h"
+//#include "Formula1_Bold_web_048pt7b.h"
+#include "CardotSemibold7pt7b.h"
+#include "CardotSemibold22pt7b.h"
+#include "CardotSemibold12pt7b.h"
+#include "CardotSemibold42pt7b.h"
+#include "CardotSemibold48pt7b.h"
+
 
 #define TFT_C_DARKBLUE  0x0176
 #define TFT_C_YELLORANCE 0xFEE0
@@ -64,13 +70,28 @@ typedef struct
 
 
 
+
 #if 1
 
  const guiboxes_t guiboxes[MAX_GUIBOXES] = 
  {
     {ENG_RPM,   GB_MEDIUM,  0,4,    4},
+    {SPEED,     GB_MEDIUM,  76,4,    4},
+    {GEAR_C,    GB_BIG,     154,4,    4}, //ok
+    {OIL,       GB_MEDIUM,  0,82,    4},
+    {COOLANT,   GB_MEDIUM,  76,82,    4},
+    {V_ENG_RPM, GB_WIDELINE, 0,0, 4}
+ };
+#endif
+
+
+#if 0 //original centered
+
+ const guiboxes_t guiboxes[MAX_GUIBOXES] = 
+ {
+    {ENG_RPM,   GB_MEDIUM,  0,4,    4},     //75x36 original numberbox mid
     {SPEED,     GB_MEDIUM,  165,4,    4},
-    {GEAR_C,    GB_BIG,     76,4,    4},
+    {GEAR_C,    GB_BIG,     76,4,    4},    //86x133 original numberboxbig
     {OIL,       GB_MEDIUM,  0,94,    4},
     {COOLANT,   GB_MEDIUM,  165,94,    4},
     {V_ENG_RPM, GB_WIDELINE, 0,0, 4}
@@ -141,7 +162,7 @@ void GUI_ConnectedSplash(String  text, int x, int y, int font_size, uint16_t col
 
     // Set text coordinate datum to middle centre
     img.setTextDatum(MC_DATUM);
-    img.setFreeFont(&Orbitron_Light_24);  // Select free font Formula1_Bold_web_020pt7bBitmaps
+    img.setFreeFont(&CardotSemibold7pt7b);  // Select free font Formula1_Bold_web_020pt7bBitmaps
     img.drawString(text+"\0", 10, 67,font_size);
 
     // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
@@ -157,7 +178,7 @@ void GUI_ConnectedSplash(String  text, int x, int y, int font_size, uint16_t col
 void DrawNumberBox_Big(String  num, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
 {
     // Create a sprite 80 pixels wide, 50 high (8kbytes of RAM needed)
-    img.createSprite(86, 133);
+    img.createSprite(85, 133);
     img.setTextWrap(false); 
     // Fill it with black
     img.fillSprite(color_bkg);
@@ -166,14 +187,14 @@ void DrawNumberBox_Big(String  num, int x, int y, int font_size, uint16_t color_
 
     // Set the font parameters
     img.setTextSize(1);                             // Font size scaling is x1
-    img.setFreeFont(&Formula1_Bold_web_048pt7b);    //Orbitron_Light_24); 
+    img.setFreeFont(&CardotSemibold48pt7b);    //Orbitron_Light_24); 
     img.setTextColor(color_text);  
 
     // Set text coordinate datum to middle centre
-    img.setTextDatum(ML_DATUM);
+    img.setTextDatum(MC_DATUM);
 
     // Draw the number in middle of 80 x 50 sprite
-    img.drawString(num + String(" "), 0, 60);
+    img.drawString(num , 0, 40);
 
     // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
     img.pushSprite(x, y);
@@ -184,15 +205,17 @@ void DrawNumberBox_Big(String  num, int x, int y, int font_size, uint16_t color_
 
 void textBox(String  txt, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
 {
-    img.createSprite(75, 9);
+    img.createSprite(76, 16);
     img.setTextWrap(false); 
     img.fillSprite(color_bkg);
     img.setTextDatum(MC_DATUM);
 
     // Draw the number in middle of 80 x 50 sprite
     img.setTextSize(1);                             // Font size scaling is x1
-    img.setFreeFont(&FreeSans9pt7b);
-    img.drawString(txt, 0, 1);
+    img.setFreeFont(&CardotSemibold7pt7b);
+    img.setTextColor(color_text);  
+
+    img.drawString(txt, 2, 6);
 
     img.pushSprite(x, y);
 
@@ -217,20 +240,20 @@ void wideline(float  data, int x, int y,  uint16_t color_bkg, uint16_t color_tex
 void numberBox(String  num, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
 {
   // Create a sprite 80 pixels wide, 50 high (8kbytes of RAM needed)
-    img.createSprite(75, 36);
+    img.createSprite(76, 34);
     img.setTextWrap(false); 
     // Fill it with black
     img.fillSprite(color_bkg);
 
 
     // Set the font parameters
-    img.setTextSize(1);           // Font size scaling is x1
-    //img.setFreeFont(&FreeSerifBoldItalic24pt7b);  // Select free font
+    //img.setTextSize(1);           // Font size scaling is x1
+    img.setFreeFont(&CardotSemibold12pt7b);    //Orbitron_Light_24); 
     img.setTextColor(color_text);  // White text, no background colour
 
     // Set text coordinate datum to middle centre
     img.setTextDatum(MC_DATUM);
-    img.drawString(num+"\0", 37, 18,font_size);
+    img.drawString(num, 34, 14);
 
     // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
     img.pushSprite(x, y);
