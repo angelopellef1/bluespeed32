@@ -287,13 +287,13 @@ void loop()
       if(REQ_OK == req)
       {
         
-        //GuiBox_draw(FUEL_CUSTOM, oil);
+        GuiBox_draw(FUEL_CUSTOM, fuel);
         Scheduler_release(); 
       }
       else if(REQ_E_FAIL == req)
       {
         //no draw
-        //GuiBox_draw(FUEL_CUSTOM, 1);
+        GuiBox_draw(FUEL_CUSTOM, 1);
         Scheduler_release(); 
       }
       else

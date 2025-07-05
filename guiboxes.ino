@@ -28,6 +28,7 @@
 
 
 #define GB_TEXTBOX_H 16
+#define GB_TEXTBOXR_W 34
 #define GB_MNUMBOX_H 34
 
 #define GB_MNUMBOX_W 75
@@ -35,8 +36,7 @@
 #define GB_BNUMBOX_W 85
 #define GB_BNUMBOX_H 133 
 
-#define GB_SNUMBOX_W 85
-#define GB_SNUMBOX_H 16
+
 
 
 
@@ -80,7 +80,7 @@ typedef struct
     {OIL,       {80,81,120,125},        {TFT_C_DARKBLUE, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} },
     {COOLANT,   {80,81,100,110},        {TFT_C_DARKBLUE, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} },
     {V_ENG_RPM, {1980,1981,3500,6000},      {TFT_BLACK, TFT_BLACK, TFT_BLACK, TFT_BLACK}, {TFT_C_YELLORANCE, TFT_C_YELLORANCE, TFT_C_YELLORANCE, TFT_C_YELLORANCE} },
-    {FUEL_CUSTOM, {10,11,12,95},      {TFT_BLACK, TFT_BLACK, TFT_BLACK, TFT_BLACK}, {TFT_C_YELLORANCE, TFT_DARKGREY, TFT_DARKGREY, TFT_C_DARK_GREEN} },
+    {FUEL_CUSTOM, {10,11,12,95},      {TFT_C_YELLORANCE, TFT_BLACK, TFT_BLACK, TFT_C_DARK_GREEN}, {TFT_BLACK, TFT_WHITE, TFT_WHITE, TFT_WHITE} },
  };
 
 
@@ -96,7 +96,7 @@ typedef struct
     {OIL,       GB_MEDIUM,      GB_BNUMBOX_W + 1,                   83,                     4},
     {COOLANT,   GB_MEDIUM,      GB_BNUMBOX_W + 1 + GB_MNUMBOX_W +2 ,83,                     4},
     {V_ENG_RPM, GB_WIDELINE,    0,                                  0,                      4},
-    {FUEL_CUSTOM, GB_SMALL,    GB_BNUMBOX_W + GB_MNUMBOX_W +2,      4 + GB_MNUMBOX_H + 16,  2}
+    {FUEL_CUSTOM, GB_SMALL,    GB_BNUMBOX_W + 1+  38,      61,  2}
  };
 #endif
 
@@ -156,7 +156,7 @@ void GUI_FirstSplash()
     img.setFreeFont(&Orbitron_Light_24);  // Select free font Formula1_Bold_web_020pt7bBitmaps
     img.drawString("APHUD", 180,45);
     img.drawString("BRZ", 200,70);
-    img.drawString("v0.9", 200,95);
+    img.drawString("v0.10", 200,95);
 
     // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
     img.pushSprite(0, 0);
@@ -219,6 +219,12 @@ void GUI_DataHeaders()
             81 + 4 + GB_MNUMBOX_H , 
             1, 
             TFT_DARKGREY,TFT_BLACK);        
+    
+    textBox("FL",
+            GB_BNUMBOX_W + 1 , 
+            61 , 
+            1, 
+            TFT_BLACK, TFT_DARKGREY);     
 }
 
 
@@ -266,13 +272,36 @@ void textBox(String  txt, int x, int y, int font_size, uint16_t color_bkg, uint1
     img.deleteSprite();
 }
 
+void textBox_r(String  txt, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
+{
+    img.createSprite(GB_TEXTBOXR_W, GB_TEXTBOX_H);
+    img.setTextWrap(false); 
+    img.fillSprite(color_bkg);
+    img.setTextDatum(MC_DATUM);
+
+    // Draw the number in middle of 80 x 50 sprite
+    img.setTextSize(1);                             // Font size scaling is x1
+    img.setFreeFont(&CardotSemibold7pt7b);
+    img.setTextColor(color_text);  
+
+    img.drawString(txt, 2, 6);
+
+    img.pushSprite(x, y);
+
+    img.deleteSprite();
+}
+
 
 void wideline(float  data, int x, int y,  uint16_t color_bkg, uint16_t color_text)
 {
     img.createSprite(240, 4);
     img.fillSprite(color_bkg);
 
-    int outputValue = map((int)data, 4000, 7000, 0, 240); 
+    int outputValue = map((int)data, 2300, 3300, 0, 240); 
+    if(data > 3400)
+    {
+        outputValue = 0;
+    }
     img.fillRect(x, y, outputValue, 4, color_text);
     img.pushSprite(x, y);
 
