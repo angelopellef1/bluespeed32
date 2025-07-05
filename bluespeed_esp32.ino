@@ -62,6 +62,7 @@ typedef enum {
   GEAR_C,
   OIL,
   COOLANT,
+  FUEL_CUSTOM,
   PID_N,
   V_ENG_RPM
 } obd_pid_states;
@@ -155,7 +156,7 @@ void setup()
 
 void loop()
 {
-  static float bk_rpm, rpm, bk_kmh, kmh, gear, oil, cool ;
+  static float bk_rpm, rpm, bk_kmh, kmh, gear, oil, cool, fuel ;
   req_states req = REQ_OK;
 
   static int oil_freq = 30;
@@ -279,6 +280,26 @@ void loop()
       } 
       break;
     }
+    break;
+
+    case FUEL_CUSTOM:
+      req = obdcustom_subaru_fuel(&fuel);
+      if(REQ_OK == req)
+      {
+        
+        //GuiBox_draw(FUEL_CUSTOM, oil);
+        Scheduler_release(); 
+      }
+      else if(REQ_E_FAIL == req)
+      {
+        //no draw
+        //GuiBox_draw(FUEL_CUSTOM, 1);
+        Scheduler_release(); 
+      }
+      else
+      {
+        //wait..
+      }
     break;
 
     default:
