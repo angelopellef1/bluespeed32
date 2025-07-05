@@ -2,9 +2,9 @@ const float ref_speeds[6] = {16,44,54,90,88,88};
 const float ref_revs[6] = {2000,3500,3000,4000,2500,2500};
 
 
-
-const float ratios_up_bound[6] = {0.00815, 0.01285, 0.01785, 0.0224, 0.02695, 0.0348};
-const float rations_dw_boud[6] = {0.00615, 0.01085, 0.01585, 0.0204, 0.02495, 0.0328};
+                                  //1       2       3        4      5         6
+const float ratios_up_bound[6] = {0.00815, 0.01285, 0.01785, 0.0224, 0.02695, 0.0350};
+const float rations_dw_boud[6] = {0.00615, 0.01085, 0.01585, 0.0204, 0.02495, 0.0310};
 
 
 float ratio[6];
@@ -23,7 +23,7 @@ int  calculate_gear(float vss, float rpm)
 {
   int result = UNDEFINED_GEAR;
 
-  if(vss < 10)
+  if(vss < 8)
   {
     return result;
   }
