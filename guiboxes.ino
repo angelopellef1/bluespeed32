@@ -35,6 +35,9 @@
 #define GB_BNUMBOX_W 85
 #define GB_BNUMBOX_H 133 
 
+#define GB_SNUMBOX_W 85
+#define GB_SNUMBOX_H 16
+
 
 
 
@@ -67,7 +70,7 @@ typedef struct
     uint16_t colours_text[COLOR_LEVELS];
  } color_profiles_t;
 
-#define MAX_GUIBOXES    6
+#define MAX_GUIBOXES    7
 
  const color_profiles_t color_profile[MAX_GUIBOXES] = 
  {
@@ -77,6 +80,7 @@ typedef struct
     {OIL,       {80,81,120,125},        {TFT_C_DARKBLUE, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} },
     {COOLANT,   {80,81,100,110},        {TFT_C_DARKBLUE, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} },
     {V_ENG_RPM, {1980,1981,3500,6000},      {TFT_BLACK, TFT_BLACK, TFT_BLACK, TFT_BLACK}, {TFT_C_YELLORANCE, TFT_C_YELLORANCE, TFT_C_YELLORANCE, TFT_C_YELLORANCE} },
+    {FUEL_CUSTOM, {10,11,12,95},      {TFT_BLACK, TFT_BLACK, TFT_BLACK, TFT_BLACK}, {TFT_C_YELLORANCE, TFT_DARKGREY, TFT_DARKGREY, TFT_C_DARK_GREEN} },
  };
 
 
@@ -86,12 +90,13 @@ typedef struct
 // gerar on the LEFT
  const guiboxes_t guiboxes[MAX_GUIBOXES] = 
  {
-    {ENG_RPM,   GB_MEDIUM_RT,   GB_BNUMBOX_W + GB_MNUMBOX_W +2,       4,      4},
-    {SPEED,     GB_MEDIUM,      GB_BNUMBOX_W + 1,                        4,      4},
-    {GEAR_C,    GB_BIG,         0,                                      4,      4}, 
-    {OIL,       GB_MEDIUM,      GB_BNUMBOX_W + 1,                       83,      4},
-    {COOLANT,   GB_MEDIUM,      GB_BNUMBOX_W + 1 + GB_MNUMBOX_W +2 ,     83,      4},
-    {V_ENG_RPM, GB_WIDELINE,    0,                                     0,       4}
+    {ENG_RPM,   GB_MEDIUM_RT,   GB_BNUMBOX_W + GB_MNUMBOX_W +2,     4,                      4},
+    {SPEED,     GB_MEDIUM,      GB_BNUMBOX_W + 1,                   4,                      4},
+    {GEAR_C,    GB_BIG,         0,                                  4,                      4}, 
+    {OIL,       GB_MEDIUM,      GB_BNUMBOX_W + 1,                   83,                     4},
+    {COOLANT,   GB_MEDIUM,      GB_BNUMBOX_W + 1 + GB_MNUMBOX_W +2 ,83,                     4},
+    {V_ENG_RPM, GB_WIDELINE,    0,                                  0,                      4},
+    {FUEL_CUSTOM, GB_SMALL,    GB_BNUMBOX_W + GB_MNUMBOX_W +2,      4 + GB_MNUMBOX_H + 16,  2}
  };
 #endif
 
@@ -303,6 +308,7 @@ void numberBox(String  num, int x, int y, int font_size, uint16_t color_bkg, uin
     img.deleteSprite();
 }
 
+
 void GuiColors_get(obd_pid_states pi, float in_value, uint16_t * bkg, uint16_t * forec)
 {
     int pid_s = (int) pi;
@@ -377,6 +383,10 @@ void GuiColors_get(obd_pid_states pi, float in_value, uint16_t * bkg, uint16_t *
             else if(guiboxes[i].gb_type == GB_WIDELINE)
             {
                 wideline(data, guiboxes[i].x,  guiboxes[i].y, bkgr, textc );
+            }
+            else if(guiboxes[i].gb_type == GB_SMALL)
+            {
+                textBox(Sdata, guiboxes[i].x,  guiboxes[i].y,  guiboxes[i].text_size, bkgr, textc );
             }
             
             break;
