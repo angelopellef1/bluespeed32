@@ -89,8 +89,8 @@ typedef struct
     {ENG_RPM,   GB_MEDIUM_RT,   GB_BNUMBOX_W + GB_MNUMBOX_W +2,       4,      4},
     {SPEED,     GB_MEDIUM,      GB_BNUMBOX_W + 1,                        4,      4},
     {GEAR_C,    GB_BIG,         0,                                      4,      4}, 
-    {OIL,       GB_MEDIUM,      GB_BNUMBOX_W + 1,                       81,      4},
-    {COOLANT,   GB_MEDIUM,      GB_BNUMBOX_W + 1 + GB_MNUMBOX_W +2 ,     81,      4},
+    {OIL,       GB_MEDIUM,      GB_BNUMBOX_W + 1,                       83,      4},
+    {COOLANT,   GB_MEDIUM,      GB_BNUMBOX_W + 1 + GB_MNUMBOX_W +2 ,     83,      4},
     {V_ENG_RPM, GB_WIDELINE,    0,                                     0,       4}
  };
 #endif
