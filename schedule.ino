@@ -14,11 +14,12 @@ bool released = true;
 /**
  * tack_ticker
  * Containts init values
-    ENG_RPM,
-    SPEED,
-    GEAR_C,
-    OIL,
-    COOLANT,
+ENG_RPM,
+SPEED,
+GEAR_C,
+OIL,
+COOLANT,
+FUEL_CUSTOM,
     PID_N
  */
  //modififiend scheduler ticks for test on oil and custom header
@@ -28,7 +29,8 @@ bool released = true;
     1,
     1,
     60,
-    5
+    5,
+    120,
  };
 
  /**
