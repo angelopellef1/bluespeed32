@@ -260,8 +260,7 @@ void textBox(String  txt, int x, int y, int font_size, uint16_t color_bkg, uint1
     img.fillSprite(color_bkg);
     img.setTextDatum(MC_DATUM);
 
-    // Draw the number in middle of 80 x 50 sprite
-    img.setTextSize(1);                             // Font size scaling is x1
+    img.setTextSize(1);
     img.setFreeFont(&CardotSemibold7pt7b);
     img.setTextColor(color_text);  
 
@@ -278,16 +277,11 @@ void textBox_r(String  txt, int x, int y, int font_size, uint16_t color_bkg, uin
     img.setTextWrap(false); 
     img.fillSprite(color_bkg);
     img.setTextDatum(MC_DATUM);
-
-    // Draw the number in middle of 80 x 50 sprite
-    img.setTextSize(1);                             // Font size scaling is x1
+    img.setTextSize(1);
     img.setFreeFont(&CardotSemibold7pt7b);
     img.setTextColor(color_text);  
-
     img.drawString(txt, 2, 6);
-
     img.pushSprite(x, y);
-
     img.deleteSprite();
 }
 
