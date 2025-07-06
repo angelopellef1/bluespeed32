@@ -93,8 +93,8 @@ typedef struct
     {ENG_RPM,   GB_MEDIUM_RT,   GB_BNUMBOX_W + GB_MNUMBOX_W +2,     4,                      4},
     {SPEED,     GB_MEDIUM,      GB_BNUMBOX_W + 1,                   4,                      4},
     {GEAR_C,    GB_BIG,         0,                                  4,                      4}, 
-    {OIL,       GB_MEDIUM,      GB_BNUMBOX_W + 1,                   83,                     4},
-    {COOLANT,   GB_MEDIUM,      GB_BNUMBOX_W + 1 + GB_MNUMBOX_W +2 ,83,                     4},
+    {OIL,       GB_MEDIUM,      GB_BNUMBOX_W + 1,                   84,                     4},
+    {COOLANT,   GB_MEDIUM,      GB_BNUMBOX_W + 1 + GB_MNUMBOX_W +2 ,84,                     4},
     {V_ENG_RPM, GB_WIDELINE,    0,                                  0,                      4},
     {FUEL_CUSTOM, GB_SMALL,    GB_BNUMBOX_W + 1+  38,      61,  2}
  };
@@ -156,7 +156,7 @@ void GUI_FirstSplash()
     img.setFreeFont(&Orbitron_Light_24);  // Select free font Formula1_Bold_web_020pt7bBitmaps
     img.drawString("APHUD", 180,45);
     img.drawString("BRZ", 200,70);
-    img.drawString("v0.10", 200,95);
+    img.drawString("v0.10", 190,95);
 
     // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
     img.pushSprite(0, 0);
