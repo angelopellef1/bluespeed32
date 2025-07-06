@@ -203,11 +203,12 @@ req_states obdcustom_subaru_fuel( float * value)
             
             if (myELM327.nb_rx_state == ELM_SUCCESS)
             {      
-
+                //>21291
+                //7C8 03  61 29 >1B<  
                 if (myELM327.recBytes > 7)
                 {
-                        rawValue = hexCharToValue(myELM327.payload[7]); 
-                        rawValue2 = hexCharToValue(myELM327.payload[7+1]);
+                        rawValue = hexCharToValue(myELM327.payload[9]); 
+                        rawValue2 = hexCharToValue(myELM327.payload[9+1]);
                         conValue = (int16_t)((rawValue<<4)&0xF0) ;
                         conValue |= (int16_t)(0x0F & rawValue2);
                         conValue *= 0.5;
