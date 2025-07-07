@@ -70,7 +70,7 @@ typedef struct
     uint16_t colours_text[COLOR_LEVELS];
  } color_profiles_t;
 
-#define MAX_GUIBOXES    7
+#define MAX_GUIBOXES    8
 
  const color_profiles_t color_profile[MAX_GUIBOXES] = 
  {
@@ -79,8 +79,8 @@ typedef struct
     {GEAR_C,    {1000,1001,5000,6000}, {TFT_BLACK, TFT_BLACK, TFT_C_YELLORANCE, TFT_C_ORANGE_D}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} },
     {OIL,       {80,81,120,125},        {TFT_C_DARKBLUE, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} },
     {COOLANT,   {80,81,100,110},        {TFT_C_DARKBLUE, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} },
-    {V_ENG_RPM, {1980,1981,3500,6000},      {TFT_BLACK, TFT_BLACK, TFT_BLACK, TFT_BLACK}, {TFT_C_YELLORANCE, TFT_C_YELLORANCE, TFT_C_YELLORANCE, TFT_C_YELLORANCE} },
-    {FUEL_CUSTOM, {10,11,12,95},      {TFT_C_YELLORANCE, TFT_BLACK, TFT_BLACK, TFT_C_DARK_GREEN}, {TFT_BLACK, TFT_WHITE, TFT_WHITE, TFT_WHITE} },
+    {FUEL_CUSTOM, {10,11,12,95},      {TFT_C_YELLORANCE, TFT_C_DARKBLUE, TFT_C_DARKBLUE, TFT_C_DARK_GREEN}, {TFT_BLACK, TFT_WHITE, TFT_WHITE, TFT_WHITE} },
+    {V_ENG_RPM, {1980,1981,3200,6000},      {TFT_BLACK, TFT_BLACK, TFT_BLACK, TFT_BLACK}, {TFT_C_YELLORANCE, TFT_C_YELLORANCE, TFT_WHITE, TFT_WHITE} },
  };
 
 
@@ -95,8 +95,8 @@ typedef struct
     {GEAR_C,    GB_BIG,         0,                                  4,                      4}, 
     {OIL,       GB_MEDIUM,      GB_BNUMBOX_W + 1,                   84,                     4},
     {COOLANT,   GB_MEDIUM,      GB_BNUMBOX_W + 1 + GB_MNUMBOX_W +2 ,84,                     4},
-    {V_ENG_RPM, GB_WIDELINE,    0,                                  0,                      4},
-    {FUEL_CUSTOM, GB_SMALL,    GB_BNUMBOX_W + 1+  38,      61,  2}
+    {FUEL_CUSTOM, GB_SMALL,    GB_BNUMBOX_W + 1+  42,               57,                     2},
+    {V_ENG_RPM, GB_WIDELINE,    0,                                  0,                      4}
  };
 #endif
 
@@ -220,7 +220,7 @@ void GUI_DataHeaders()
             1, 
             TFT_DARKGREY,TFT_BLACK);        
     
-    textBox("FL",
+    textBox("Fuel",
             GB_BNUMBOX_W + 1 , 
             61 , 
             1, 
@@ -291,8 +291,8 @@ void wideline(float  data, int x, int y,  uint16_t color_bkg, uint16_t color_tex
     img.createSprite(240, 4);
     img.fillSprite(color_bkg);
 
-    int outputValue = map((int)data, 2300, 3300, 0, 240); 
-    if(data > 3400)
+    int outputValue = map((int)data, 2300, 3500, 0, 240); 
+    if(data > 3500)
     {
         outputValue = 0;
     }
@@ -317,6 +317,19 @@ void numberBox_rt(String  num, int x, int y, int font_size, uint16_t color_bkg, 
     img.deleteSprite();
 }
 
+void numberBox_rtf(String  num, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
+{
+    img.createSprite(GB_MNUMBOX_W-15, GB_MNUMBOX_H-8);
+    img.setTextWrap(false); 
+    img.fillSprite(color_bkg);
+    img.setFreeFont(&CardotSemibold12pt7b);    
+    img.setTextColor(color_text);  
+    img.setTextDatum(MC_DATUM);
+    img.drawString(num, 30, 10);
+    img.pushSprite(x, y);
+    img.deleteSprite();
+}
+
 
 void numberBox(String  num, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
 {
@@ -334,7 +347,20 @@ void numberBox(String  num, int x, int y, int font_size, uint16_t color_bkg, uin
 
 void GuiColors_get(obd_pid_states pi, float in_value, uint16_t * bkg, uint16_t * forec)
 {
-    int pid_s = (int) pi;
+    int pid_s = 0;
+
+    for(pid_s = 0; pid_s< MAX_GUIBOXES; pid_s++ )
+    {
+        if ((int)pi == color_profile[pid_s].pi)
+        {
+            break;
+        }
+    }
+
+    if(pid_s == MAX_GUIBOXES)
+    {
+        pid_s = 0;
+    }
 
     //default colors
     *bkg = color_profile[pid_s].colours[1];
@@ -409,7 +435,7 @@ void GuiColors_get(obd_pid_states pi, float in_value, uint16_t * bkg, uint16_t *
             }
             else if(guiboxes[i].gb_type == GB_SMALL)
             {
-                textBox(Sdata, guiboxes[i].x,  guiboxes[i].y,  guiboxes[i].text_size, bkgr, textc );
+                numberBox_rtf(Sdata, guiboxes[i].x,  guiboxes[i].y,  guiboxes[i].text_size, bkgr, textc );
             }
             
             break;
