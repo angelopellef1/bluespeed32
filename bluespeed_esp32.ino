@@ -8,6 +8,7 @@
 
 #include "Formula1_Bold_web_020pt7b.h"
 
+#define SIMULATION_  0
 
 #define S1_PIN 0        // Change to your S1 button GPIO
 #define TFT_BL 4        // Backlight control pin (PWM capable)
@@ -118,6 +119,17 @@ void setup()
     //GUI_Splash("AP Hud BRZ",0,0, 4, TFT_BLACK, 0xFEE0);
     GUI_FirstSplash();
 
+#ifdef SIMULATION
+    GUI_MoveSplash();
+
+    GUI_ConnectedSplash("Simulation ",0,0,1,TFT_BLACK, TFT_DARKGREY);
+    Scheduler_Init();
+
+    tft.setTextSize(1);
+    tft.fillScreen(TFT_BLACK);
+    GUI_DataHeaders();
+    return;
+#endif
   
     DEBUG_PORT.begin(115200);
     // SerialBT.setPin("1234");
@@ -190,6 +202,19 @@ void loop()
 
   obd_state = Scheduler_task_calculate(obd_state);
 
+#ifdef SIMULATION
+  while(true)
+  {
+    GuiBox_draw(ENG_RPM, 2600);
+    GuiBox_draw(V_ENG_RPM, 2600);
+    GuiBox_draw(SPEED, 113); 
+    GuiBox_draw(GEAR_C,6);
+    GuiBox_draw(OIL, 125);
+    GuiBox_draw(COOLANT, 100);
+    GuiBox_draw(FUEL_CUSTOM, 49);
+  }
+
+#endif
 
   switch (obd_state)
   {
