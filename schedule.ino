@@ -20,10 +20,9 @@ GEAR_C,
 OIL,
 COOLANT,
 FUEL_CUSTOM,
-    PID_N
+PID_N
  */
- //modififiend scheduler ticks for test on oil and custom header
- const uint32_t task_ticker[REQUEST_N] = 
+const uint32_t TASK_TICKER[REQUEST_N] = 
  {
     1,
     1,
@@ -33,17 +32,37 @@ FUEL_CUSTOM,
     90,
  };
 
+/**
+* First round task ticker
+*/
+ const uint32_t TASK_TICKER_FIRST[REQUEST_N] = 
+ {
+    1,
+    1,
+    1,
+    3,
+    3,
+    5,
+ };
+
  /**
   * tack_ticker_cnt
   * live counters of tick
   */
 uint32_t task_ticker_cnt[REQUEST_N]; 
 
+/**
+ * task_ticker_start_cnt
+ * counters only executed at start
+ * for firsts requests
+ */
+uint32_t task_ticker_start_cnt[REQUEST_N]; 
+
 void Scheduler_Init()
 {
     for(int i = 0; i< REQUEST_N; i++)
     {
-        task_ticker_cnt[i] = task_ticker[i];
+        task_ticker_cnt[i] = TASK_TICKER_FIRST[i];
     }
 }
 
@@ -72,7 +91,7 @@ obd_pid_states Scheduler_task_calculate(obd_pid_states current_task)
             else
             {
                 ret_task = (obd_pid_states)tasks;
-                task_ticker_cnt[tasks] = task_ticker[tasks];
+                task_ticker_cnt[tasks] = TASK_TICKER[tasks];
                 released = false;
                 break;
             }
