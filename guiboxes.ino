@@ -80,7 +80,7 @@ typedef struct
     {OIL,       {80,81,120,125},        {TFT_C_DARKBLUE, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} },
     {COOLANT,   {80,81,100,110},        {TFT_C_DARKBLUE, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} },
     {FUEL_CUSTOM, {10,11,12,95},      {TFT_C_YELLORANCE, TFT_BLACK, TFT_BLACK, TFT_C_DARK_GREEN}, {TFT_BLACK, TFT_WHITE, TFT_WHITE, TFT_WHITE} },
-    {V_ENG_RPM, {1980,1981,3200,6000},      {TFT_BLACK, TFT_BLACK, TFT_BLACK, TFT_BLACK}, {TFT_C_YELLORANCE, TFT_C_YELLORANCE, TFT_WHITE, TFT_WHITE} },
+    {V_ENG_RPM, {2500,2501,5000,6000},      {TFT_BLACK, TFT_BLACK, TFT_BLACK, TFT_BLACK}, {TFT_WHITE, TFT_CYAN, TFT_C_YELLORANCE, TFT_RED} },
  };
 
 
@@ -232,10 +232,29 @@ void DrawNumberBox_Big(String  num, int x, int y, int font_size, uint16_t color_
 {
     img.createSprite(85, 133);
     img.setTextWrap(false); 
+
+    static int flip = 0;
+    flip++;
+
+    if(flip % 2)
+    {
+        if(color_bkg == TFT_C_ORANGE_D)
+        {
+            color_bkg = TFT_BLACK;
+            color_text = TFT_C_ORANGE_D;
+        }
+
+    }
+
+
+
     img.fillSprite(color_bkg);
 
     img.setTextSize(1);                             // Font size scaling is x1
     img.setFreeFont(&CardotSemibold48pt7b);    //Orbitron_Light_24); 
+
+    
+
     img.setTextColor(color_text);  
 
 
@@ -291,12 +310,29 @@ void wideline(float  data, int x, int y,  uint16_t color_bkg, uint16_t color_tex
     img.createSprite(240, 4);
     img.fillSprite(color_bkg);
 
-    int outputValue = map((int)data, 2300, 3500, 0, 240); 
-    if(data > 3500)
+    //to be aligned with this
+    //{V_ENG_RPM, {1980,2300,5000,6000},      {TFT_BLACK, TFT_BLACK, TFT_BLACK, TFT_BLACK}, {TFT_WHITE, TFT_C_YELLORANCE, TFT_C_YELLORANCE, TFT_C_YELLORANCE} },
+
+
+    int outputValue_low = map((int)data, 2300, 3500, 0, 240);
+    int outputValue_high = map((int)data, 5000, 6500, 0, 240);  
+
+    if((data > 3500) && (data < 5000))
     {
-        outputValue = 0;
+        // no darw range
+        outputValue_low = 0;
+        outputValue_high = 0;
     }
-    img.fillRect(x, y, outputValue, 4, color_text);
+
+    if(data > 5000)
+    {
+        img.fillRect(x, y, outputValue_high, 4, color_text);
+    }
+    else
+    {
+        img.fillRect(x, y, outputValue_low, 4, color_text);
+    }
+   
     img.pushSprite(x, y);
 
     img.deleteSprite();
