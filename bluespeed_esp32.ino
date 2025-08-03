@@ -171,7 +171,7 @@ void loop()
   static float bk_rpm, rpm, bk_kmh, kmh, gear, oil, cool, fuel ;
   req_states req = REQ_OK;
 
-  static int oil_freq = 30;
+
 
 
   if (buttonPressed) 
