@@ -175,6 +175,20 @@ void GUI_MoveSplash()
     img.deleteSprite();
 }
 
+void GUI_Shutdown() 
+{
+    img.createSprite(240, 135);
+    img.setTextWrap(false);
+    img.fillSprite(TFT_BLACK);
+    img.setTextDatum(MC_DATUM);
+    img.setTextSize(1);
+    img.setTextColor(TFT_WHITE);
+    img.setFreeFont(&Orbitron_Light_24);
+    img.drawString("Goodbye!", 120, 67);
+    img.pushSprite(0, 0);
+
+}
+
 
 void GUI_ConnectedSplash(String  text, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
 {

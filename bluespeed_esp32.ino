@@ -166,13 +166,42 @@ void setup()
 
 }
 
+#define SYSTEM_SHUTDOWN 0
+#define SYSTEM_RUNNING 1
+
+unsigned long lowRpmStartTime = 0;
+int System_Mode = SYSTEM_RUNNING;
+
+void checkEngineShutdown()
+{
+  if (car.rpm < 600) {
+    if (lowRpmStartTime == 0) {
+      lowRpmStartTime = millis();
+    }
+    else if ((millis() - lowRpmStartTime) > 2000) {
+      System_Mode = SYSTEM_SHUTDOWN;
+    }
+  }
+  else
+  {
+    lowRpmStartTime = 0;
+  }
+}
+
+
 void loop()
 {
   static float bk_rpm, rpm, bk_kmh, kmh, gear, oil, cool, fuel ;
   req_states req = REQ_OK;
 
 
-
+  checkEngineShutdown();
+  if (System_Mode == SYSTEM_SHUTDOWN) {
+    GUI_Shutdown();
+    while (true) {
+      delay(1000); // Keep the display on
+    }
+  }
 
   if (buttonPressed) 
   {
