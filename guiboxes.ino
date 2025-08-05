@@ -207,6 +207,22 @@ void GUI_ConnectedSplash(String  text, int x, int y, int font_size, uint16_t col
     img.deleteSprite();
 }
 
+void GUI_SyncDataSplash()
+{
+    img.createSprite(200, 135);
+    img.setTextWrap(false); 
+    // Fill it with black
+    img.fillSprite(TFT_BLACK);
+    img.setTextSize(1);           // Font size scaling is x1
+    img.setTextColor(TFT_DARKGREY);  
+
+    img.setTextDatum(MC_DATUM);
+    img.setFreeFont(&CardotSemibold12pt7b);  
+    img.drawString("Sync data..", 10, 67, 1);
+    img.pushSprite(0, 0);
+    img.deleteSprite();
+}
+
 void GUI_DataHeaders()
 {
     textBox("KMH",
