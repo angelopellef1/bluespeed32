@@ -289,109 +289,133 @@ void checkEngineShutdown()
     }
 }
 
+void SystemMonitoring(float fuel)
+{
+    // Check if engine has shut down
+    checkEngineShutdown();
+    
+    // Handle system shutdown mode
+    if(System_Mode == SYSTEM_SHUTDOWN) 
+    {
+        GUI_Shutdown();
+        while(true) 
+        {
+            delay(1000); // Keep the display on
+        }
+    }
+    
+    // ========================================
+    // TRIPLE BUTTON PRESS DETECTION LOGIC
+    // ========================================
+    
+    if(buttonPressed) 
+    {
+        unsigned long currentTime = millis();
+        
+        // Check if enough time has passed since last button press (debounce)
+        if(currentTime - lastDebounceTime > debounceDelay) 
+        {
+            lastDebounceTime = currentTime;
+            buttonPressed = false;
+            
+            // ========================================
+            // TRACK BUTTON PRESSES FOR TRIPLE DETECTION
+            // ========================================
+            
+            if(pressCount == 0) 
+            {
+                // First press - start timing
+                firstPressTime = currentTime;
+                pressCount = 1;
+            } 
+            else if(pressCount == 1) 
+            {
+                // Second press - continue timing
+                secondPressTime = currentTime;
+                pressCount = 2;
+            } 
+            else if(pressCount == 2) 
+            {
+                // Third press - check if triple press completed
+                thirdPressTime = currentTime;
+                pressCount = 3;
+                
+                // Check if all three presses happened within 5 seconds
+                if((thirdPressTime - firstPressTime) <= FIVE_SECONDS) 
+                {
+                    DEBUG_PORT.println("Triple press detected within 5 seconds!");
+                    triplePressDetected = true;
+                    
+                    // Execute WiFi data upload
+                    sendFuelDataViaWiFi(fuel);
+                    
+                    // Reset all tracking variables
+                    pressCount = 0;
+                    firstPressTime = 0;
+                    secondPressTime = 0;
+                    thirdPressTime = 0;
+                    triplePressDetected = false;
+                    return; // Exit early to prevent brightness toggle
+                } 
+                else 
+                {
+                    // Time exceeded - reset to second press as new first press
+                    pressCount = 1;
+                    firstPressTime = secondPressTime;
+                    secondPressTime = thirdPressTime;
+                    thirdPressTime = 0;
+                }
+            }
+            
+            // ========================================
+            // NORMAL BRIGHTNESS TOGGLE (if not triple press)
+            // ========================================
+            
+            if(!triplePressDetected) 
+            {
+                if(isFullBrightness) 
+                {
+                    ledcWrite(ledChannel, 100);  // Dim brightness
+                } 
+                else 
+                {
+                    ledcWrite(ledChannel, 255);  // Full brightness
+                }
+                isFullBrightness = !isFullBrightness;
+            }
+        } 
+        else 
+        {
+            // Debounce: ignore this press (too soon after last press)
+            buttonPressed = false;
+        }
+    } 
+    else 
+    {
+        // Button released - check if we need to reset triple press tracking
+        unsigned long currentTime = millis();
+        
+        // Reset tracking if more than 5 seconds have passed since first press
+        if(pressCount > 0 && (currentTime - firstPressTime) > FIVE_SECONDS) 
+        {
+            pressCount = 0;
+            firstPressTime = 0;
+            secondPressTime = 0;
+            thirdPressTime = 0;
+            triplePressDetected = false;
+        }
+    }
+}
+
 
 void loop()
 {
   static float bk_rpm, rpm, bk_kmh, kmh, gear, oil, cool, fuel;
   req_states req = REQ_OK;
-  checkEngineShutdown();
-  if(System_Mode == SYSTEM_SHUTDOWN) 
-  {
-      GUI_Shutdown();
-      while(true) 
-      {
-          delay(1000); // Keep the display on
-      }
-  }
-  // Handle triple button press detection
-  if(buttonPressed) 
-  {
-      unsigned long currentTime = millis();
-      
-      // Handle short press for brightness toggle (normal operation)
-      if(currentTime - lastDebounceTime > debounceDelay) 
-      {
-          lastDebounceTime = currentTime;
-          buttonPressed = false;
-          
-          // Track button press for triple press detection
-          if(pressCount == 0) 
-          {
-              firstPressTime = currentTime;
-              pressCount = 1;
-          } 
-          else if(pressCount == 1) 
-          {
-              secondPressTime = currentTime;
-              pressCount = 2;
-          } 
-          else if(pressCount == 2) 
-          {
-              thirdPressTime = currentTime;
-              pressCount = 3;
-              
-              // Check if all three presses happened within 5 seconds
-              if((thirdPressTime - firstPressTime) <= FIVE_SECONDS) 
-              {
-                  DEBUG_PORT.println("Triple press detected within 5 seconds!");
-                  triplePressDetected = true;
-                  
-                  // Send fuel data via WiFi
-                  sendFuelDataViaWiFi(fuel);
-                  
-                  // Reset all tracking variables
-                  pressCount = 0;
-                  firstPressTime = 0;
-                  secondPressTime = 0;
-                  thirdPressTime = 0;
-                  triplePressDetected = false;
-                  return; // Exit early to prevent brightness toggle
-              } 
-              else 
-              {
-                  // Reset if time exceeded
-                  pressCount = 1;
-                  firstPressTime = secondPressTime;
-                  secondPressTime = thirdPressTime;
-                  thirdPressTime = 0;
-              }
-          }
-          
-          // Normal brightness toggle (only if not triple press)
-          if(!triplePressDetected) 
-          {
-              if(isFullBrightness) 
-              {
-                  ledcWrite(ledChannel, 100);  // 40
-              } 
-              else 
-              {
-                  ledcWrite(ledChannel, 255);  // 100%
-              }
-              isFullBrightness = !isFullBrightness;
-          }
-      } 
-      else 
-      {
-          // Debounce: ignore this press
-          buttonPressed = false;
-      }
-  } 
-  else 
-  {
-      // Button released - check if we need to reset triple press tracking
-      unsigned long currentTime = millis();
-      
-      // Reset triple press tracking if more than 5 seconds have passed since first press
-      if(pressCount > 0 && (currentTime - firstPressTime) > FIVE_SECONDS) 
-      {
-          pressCount = 0;
-          firstPressTime = 0;
-          secondPressTime = 0;
-          thirdPressTime = 0;
-          triplePressDetected = false;
-      }
-  }
+  
+  // Handle system monitoring (engine shutdown, button presses, etc.)
+  SystemMonitoring(fuel);
+  
   obd_state = Scheduler_task_calculate(obd_state);
 
 #ifdef SIMULATION
