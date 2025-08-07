@@ -27,6 +27,9 @@
 #define TFT_C_ORANGE_D  0xfa80
 
 
+
+uint16_t status_colors_maps[4] = {TFT_CYAN, TFT_C_DARK_MAGENTA, TFT_RED, TFT_DARKGREY};
+
 #define GB_TEXTBOX_H 16
 #define GB_TEXTBOXR_W 34
 #define GB_MNUMBOX_H 34
@@ -207,21 +210,48 @@ void GUI_ConnectedSplash(String  text, int x, int y, int font_size, uint16_t col
     img.deleteSprite();
 }
 
-void GUI_SyncDataSplash()
+void GUI_SyncDataWithStatus(bool going_to_wifi, uint16_t statusColor)
 {
-    img.createSprite(200, 135);
-    img.setTextWrap(false); 
-    // Fill it with black
-    img.fillSprite(TFT_BLACK);
-    img.setTextSize(1);           // Font size scaling is x1
-    img.setTextColor(TFT_DARKGREY);  
+    // Ensure sprite is deleted before creating new one
+    if(img.created()) {
+        img.deleteSprite();
+    }
+    
+    // Create sprite for sync message
+    int statusBarX = (240 - 80) / 2;  // Center the 80px wide bar
+    int statusBarY = 135 - 8;         // 4px from bottom (8px total height)
 
+    img.createSprite(240, 135);
+    img.setTextWrap(false);
+    img.fillSprite(TFT_BLACK);
     img.setTextDatum(MC_DATUM);
-    img.setFreeFont(&CardotSemibold12pt7b);  
-    img.drawString("Sync data..", 10, 67, 1);
+    img.setTextSize(1);
+    img.setTextColor(TFT_DARKGREY);
+    img.setFreeFont(&CardotSemibold12pt7b);
+    
+    if(going_to_wifi)
+    {
+        img.drawString("Sync data..", 120, 67, 1);
+    }
+    else
+    {
+        img.drawString("Back to Data...", 120, 67, 1);
+    }
+   
+    // Ensure statusColor is within bounds
+    if(statusColor < 4) {
+        img.fillRect(statusBarX, statusBarY, 80, 4, status_colors_maps[statusColor]);
+    } else {
+        img.fillRect(statusBarX, statusBarY, 80, 4, TFT_RED); // Fallback color
+    }
+    
     img.pushSprite(0, 0);
     img.deleteSprite();
+    
+    // Small delay to ensure display updates
+    delay(10);
 }
+
 
 void GUI_DataHeaders()
 {

@@ -1,6 +1,7 @@
 #include "BluetoothSerial.h"
 #define DEBUG true
 #include "ELMduino.h"
+#include "secrets.h"  // Include sensitive configuration data
 
 #define LOAD_GFXFF
 #include <TFT_eSPI.h> // Graphics and font library for ILI9341 driver chip
@@ -77,6 +78,12 @@ obd_pid_states obd_state = ENG_RPM;
 
 const int UNDEFINED_GEAR = 9;
 
+
+#define SYNC_BT_DISCONNECTED    0 
+#define SYNC_WIFI_CONNECTED     1 
+#define SYNC_WIFI_FAILED        2 
+#define SYNC_BT_FAILED          3 
+
 String Srpm = "";
 String Svss = "";
 String Sgear = "";
@@ -145,9 +152,9 @@ void setup()
   
     DEBUG_PORT.begin(115200);
     // SerialBT.setPin("1234");
-    ELM_PORT.begin("wewe", true);
+    ELM_PORT.begin(BT_LOCAL_NAME, true);
 
-    if (!ELM_PORT.connect("vLinker FD-Android"))
+    if (!ELM_PORT.connect(BT_DEVICE_NAME))
     {
         DEBUG_PORT.println("Couldn't connect to OBD scanner - Phase 1");
         while (1)
@@ -192,22 +199,38 @@ int pressCount = 0;
 bool triplePressDetected = false;
 const unsigned long FIVE_SECONDS = 5000; // 5 seconds in milliseconds
 
-// WiFi credentials
-const char* ssid = "iPellPhone";
-const char* password = "pixelwifiangelo";
 
-// Function to handle WiFi connection and HTTP request
+
+
+// Function to handle WiFi connection and HTTP data transmission to Home Assistant
 void sendFuelDataViaWiFi(float fuelValue) 
 {
-    // Show sync message on display using proper GUI function
-    GUI_SyncDataSplash();
+    /*
+     * STATUS BAR COLOR CODING SYSTEM:
+     * 
+     * TFT_CYAN (0x07FF):     Bluetooth disconnect/reconnect phase
+     * TFT_GREEN (0x07E0):    WiFi connected successfully OR HTTP request successful
+     * TFT_RED (0xF800):      WiFi connection failed OR HTTP request failed
+     * TFT_DARKGREY (0x7BEF): Bluetooth reconnection failed
+     * 
+     * STATE FLOW:
+     * 1. CYAN   - Initial state: Bluetooth disconnecting, preparing for WiFi
+     * 2. GREEN  - WiFi connected successfully, ready for HTTP request
+     * 3. GREEN  - HTTP request successful (fuel data sent to Home Assistant)
+     * 4. RED    - WiFi connection failed OR HTTP request failed
+     * 5. CYAN   - Bluetooth reconnection phase
+     * 6. DARKGREY - Bluetooth reconnection failed (fallback state)
+     */
+    static uint16_t status_color = 0x0000;
+    // Show sync message with cyan status bar for Bluetooth disconnect
+    GUI_SyncDataWithStatus(true, SYNC_BT_DISCONNECTED);
     
     DEBUG_PORT.println("Disconnecting from Bluetooth...");
     ELM_PORT.disconnect();
     delay(1000);
     
     DEBUG_PORT.println("Connecting to WiFi...");
-    WiFi.begin(ssid, password);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     
     int attempts = 0;
     while(WiFi.status() != WL_CONNECTED && attempts < 20) 
@@ -219,28 +242,42 @@ void sendFuelDataViaWiFi(float fuelValue)
     
     if(WiFi.status() == WL_CONNECTED) 
     {
+        // Status bar turns GREEN for WiFi connected
+        GUI_SyncDataWithStatus(true, SYNC_WIFI_CONNECTED);
+        
         DEBUG_PORT.println("\nWiFi connected!");
         DEBUG_PORT.print("IP address: ");
         DEBUG_PORT.println(WiFi.localIP());
         
-        // Send HTTP request to ThingSpeak
+        // Send HTTP request to Home Assistant
         HTTPClient http;
-        String url = "https://api.thingspeak.com/update?api_key=GEHHSP6M421PBZMG&field1=" + String(fuelValue, 1);
+        String url = "http://" + String(HA_SERVER) + ":" + String(HA_PORT) + "/api/states/input_number.fuel_level";
         http.begin(url);
         
-        int httpResponseCode = http.GET();
+        // Add authorization header
+        http.addHeader("Authorization", "Bearer " + String(HA_TOKEN));
+        http.addHeader("Content-Type", "application/json");
+        
+        // Create JSON payload
+        String payload = "{\"state\":\"" + String(fuelValue, 1) + "\",\"attributes\":{\"unit_of_measurement\":\"L\"}}";
+        
+        int httpResponseCode = http.POST(payload);
         
         if(httpResponseCode > 0) 
         {
             String response = http.getString();
-            DEBUG_PORT.println("ThingSpeak Response code: " + String(httpResponseCode));
+            DEBUG_PORT.println("Home Assistant Response code: " + String(httpResponseCode));
             DEBUG_PORT.println("Response: " + response);
+            status_color = SYNC_WIFI_CONNECTED;
         } 
         else 
         {
-            DEBUG_PORT.println("ThingSpeak request failed");
+            DEBUG_PORT.println("Home Assistant request failed");
+            status_color = SYNC_WIFI_FAILED;
         }
-        
+        GUI_SyncDataWithStatus(true, status_color);
+
+
         http.end();
         
         // Disconnect from WiFi
@@ -250,15 +287,25 @@ void sendFuelDataViaWiFi(float fuelValue)
     else 
     {
         DEBUG_PORT.println("WiFi connection failed");
+        status_color = SYNC_WIFI_FAILED;
+        // Status bar turns RED for WiFi connection failure
+        GUI_SyncDataWithStatus(true, status_color);
     }
+    
+    // Show "Back to Data..." message and cyan status bar for Bluetooth reconnection
+    GUI_SyncDataWithStatus(false, status_color);
+
     
     // Reconnect to Bluetooth
     DEBUG_PORT.println("Reconnecting to Bluetooth...");
-    ELM_PORT.begin("wewe", true);
+    ELM_PORT.begin(BT_LOCAL_NAME, true);
     
-    if(!ELM_PORT.connect("vLinker FD-Android")) 
+    if(!ELM_PORT.connect(BT_DEVICE_NAME)) 
     {
         DEBUG_PORT.println("Couldn't reconnect to OBD scanner");
+        status_color = SYNC_BT_FAILED;
+        GUI_SyncDataWithStatus(false, status_color);
+        delay(1000);
     } 
     else 
     {
@@ -421,7 +468,7 @@ void loop()
 #ifdef SIMULATION
     obd_state =(obd_pid_states) 0xFF;
     car.speed = 0;
-    fuel = 33;
+    fuel = random(0, 50);
     car.rpm = 2600;
 
     GuiBox_draw(ENG_RPM, 2600);
@@ -430,7 +477,7 @@ void loop()
     GuiBox_draw(GEAR_C,6);
     GuiBox_draw(OIL, 125);
     GuiBox_draw(COOLANT, 100);
-    GuiBox_draw(FUEL_CUSTOM, 49);
+    GuiBox_draw(FUEL_CUSTOM, fuel);
     // Don't return here - let button logic execute
 #endif
 
