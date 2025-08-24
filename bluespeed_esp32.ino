@@ -42,7 +42,7 @@ BluetoothSerial SerialBT;
 #define ELM_PORT SerialBT
 #define DEBUG_PORT Serial
 
-#define UNDEFINED_VALUE  0x7F7FFFFF
+#define UNDEFINED_VALUE  0x7F7FFFFF 
 
 //Display 240X135
 ELM327 myELM327;
@@ -112,6 +112,11 @@ int digitCount(int num)
 struct car_t {
   float rpm;
   float speed;
+  float gear;
+  float oil;
+  float coolant;
+  float fuel;
+  uint32_t update_flags;  // Bit flags for GUI updates
 } car;
 
 
@@ -182,7 +187,7 @@ void setup()
 
 
     GUI_DataHeaders();
-
+    car.update_flags = 0;  // Initialize update flags
 }
 
 #define SYSTEM_SHUTDOWN 0
@@ -311,10 +316,7 @@ void sendFuelDataViaWiFi(float fuelValue)
     {
         DEBUG_PORT.println("Bluetooth reconnected successfully");
     }
-    
-    // Restore normal GUI display
-    tft.fillScreen(TFT_BLACK);
-    GUI_DataHeaders();
+
 }
 
 void checkEngineShutdown()
@@ -402,6 +404,10 @@ void SystemMonitoring(float fuel)
                     secondPressTime = 0;
                     thirdPressTime = 0;
                     triplePressDetected = false;
+                    // Restore normal GUI display
+                    tft.fillScreen(TFT_BLACK);
+                    GUI_DataHeaders();
+                    Scheduler_Init();
                     return; // Exit early to prevent brightness toggle
                 } 
                 else 
@@ -455,6 +461,45 @@ void SystemMonitoring(float fuel)
 }
 
 
+void process_gui_updates()
+{
+    // Check and process each state's update flag
+    for (uint8_t i = 0; i < PID_N; i++)
+    {
+        if (car.update_flags & (1UL << i))
+        {
+            // Clear the flag first
+            car.update_flags &= ~(1UL << i);
+            
+            // Call appropriate GUI update based on state
+            switch (i)
+            {
+                case ENG_RPM:
+                    GuiBox_draw(ENG_RPM, car.rpm);
+                    break;
+                case V_ENG_RPM:
+                    GuiBox_draw(V_ENG_RPM, car.rpm);
+                    break;
+                case SPEED:
+                    GuiBox_draw(SPEED, car.speed);
+                    break;
+                case GEAR_C:
+                    GuiBox_draw(GEAR_C, car.gear);
+                    break;
+                case OIL:
+                    GuiBox_draw(OIL, car.oil);
+                    break;
+                case COOLANT:
+                    GuiBox_draw(COOLANT, car.coolant);
+                    break;
+                case FUEL_CUSTOM:
+                    GuiBox_draw(FUEL_CUSTOM, car.fuel);
+                    break;
+            }
+        }
+    }
+}
+
 void loop()
 {
   static float bk_rpm, rpm, bk_kmh, kmh, gear, oil, cool, fuel;
@@ -490,8 +535,7 @@ void loop()
             car.rpm = rpm; 
             if(myELM327.nb_rx_state == ELM_SUCCESS)
             {
-                GuiBox_draw(ENG_RPM, rpm);
-                GuiBox_draw(V_ENG_RPM, rpm);
+                car.update_flags |= (1UL << ENG_RPM) | (1UL << V_ENG_RPM);  // Set both RPM update flags
                 Scheduler_release(); //obd_state = SPEED;
             }
             else if(myELM327.nb_rx_state != ELM_GETTING_MSG)
@@ -510,7 +554,7 @@ void loop()
             Svss = String(kmh,0);
             if(myELM327.nb_rx_state == ELM_SUCCESS)
             {
-                GuiBox_draw(SPEED, kmh); 
+                car.update_flags |= (1UL << SPEED);
                 Scheduler_release();
             }
             else if(myELM327.nb_rx_state != ELM_GETTING_MSG)
@@ -522,14 +566,15 @@ void loop()
         }
         
         case GEAR_C:
-            gear = calculate_gear(kmh,rpm);
+            car.gear = calculate_gear(kmh,rpm); 
+            car.gear++;
             if(gear < 7)
             {
-                GuiBox_draw(GEAR_C,gear);
+                car.update_flags |= (1UL << GEAR_C);
             }
             else
             {
-                GuiBox_draw(GEAR_C,UNDEFINED_VALUE);
+                car.update_flags |= (1UL << GEAR_C);
             }
             
             Scheduler_release();
@@ -540,13 +585,14 @@ void loop()
             req = obdcustom_subaru_oil(&oil);
             if(REQ_OK == req)
             {
-                GuiBox_draw(OIL, oil);
+                car.oil = oil;
+                car.update_flags |= (1UL << OIL);
                 Scheduler_release(); 
             }
             else if(REQ_E_FAIL == req)
             {
-                //no draw
-                GuiBox_draw(OIL, 1);
+                car.oil = 1;
+                car.update_flags |= (1UL << OIL);
                 Scheduler_release(); 
             }
             else
@@ -560,7 +606,8 @@ void loop()
             cool = myELM327.engineCoolantTemp();
             if(myELM327.nb_rx_state == ELM_SUCCESS)
             {
-                GuiBox_draw(COOLANT, cool);
+                car.coolant = cool;
+                car.update_flags |= (1UL << COOLANT);
                 Scheduler_release(); 
             }
             else if(myELM327.nb_rx_state != ELM_GETTING_MSG)
@@ -575,13 +622,14 @@ void loop()
             req = obdcustom_subaru_fuel(&fuel);
             if(REQ_OK == req)
             {
-                GuiBox_draw(FUEL_CUSTOM, fuel);
+                car.fuel = fuel;
+                car.update_flags |= (1UL << FUEL_CUSTOM);
                 Scheduler_release(); 
             }
             else if(REQ_E_FAIL == req)
             {
-                //no draw
-                GuiBox_draw(FUEL_CUSTOM, 1);
+                car.fuel = 1;
+                car.update_flags |= (1UL << FUEL_CUSTOM);
                 Scheduler_release(); 
             }
             else
@@ -593,4 +641,7 @@ void loop()
         default:
             break;
     }
+    
+    // Process any pending GUI updates
+    process_gui_updates();
 }
