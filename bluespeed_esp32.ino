@@ -119,6 +119,28 @@ struct car_t {
   uint32_t update_flags;  // Bit flags for GUI updates
 } car;
 
+void Connect_BT()
+{
+    // SerialBT.setPin("1234");
+    ELM_PORT.begin(BT_LOCAL_NAME, true);
+
+    if (!ELM_PORT.connect(BT_DEVICE_NAME))
+    {
+        DEBUG_PORT.println("Couldn't connect to OBD scanner - Phase 1");
+        while (1)
+            ;
+    }
+}
+
+void Connect_ELM()
+{
+    if (!myELM327.begin(ELM_PORT, true, 2000))
+    {
+        DEBUG_PORT.println("Couldn't connect to OBD scanner - Phase 2");
+        while (1)
+            ;
+    }
+}
 
 void setup()
 {   
@@ -156,26 +178,14 @@ void setup()
 #endif
   
     DEBUG_PORT.begin(115200);
-    // SerialBT.setPin("1234");
-    ELM_PORT.begin(BT_LOCAL_NAME, true);
 
-    if (!ELM_PORT.connect(BT_DEVICE_NAME))
-    {
-        DEBUG_PORT.println("Couldn't connect to OBD scanner - Phase 1");
-        while (1)
-            ;
-    }
+    Connect_BT();
 
     GUI_MoveSplash();
 
     GUI_ConnectedSplash("Get Ready ",0,0,1,TFT_BLACK, TFT_DARKGREY);
 
-    if (!myELM327.begin(ELM_PORT, true, 2000))
-    {
-        DEBUG_PORT.println("Couldn't connect to OBD scanner - Phase 2");
-        while (1)
-            ;
-    }
+    Connect_ELM();
 
     Scheduler_Init();
 
@@ -238,7 +248,7 @@ void sendFuelDataViaWiFi(float fuelValue)
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     
     int attempts = 0;
-    while(WiFi.status() != WL_CONNECTED && attempts < 20) 
+    while(WiFi.status() != WL_CONNECTED && attempts < 10) 
     {
         delay(500);
         DEBUG_PORT.print(".");
@@ -293,6 +303,7 @@ void sendFuelDataViaWiFi(float fuelValue)
     {
         DEBUG_PORT.println("WiFi connection failed");
         status_color = SYNC_WIFI_FAILED;
+        WiFi.disconnect();
         // Status bar turns RED for WiFi connection failure
         GUI_SyncDataWithStatus(true, status_color);
     }
@@ -300,23 +311,18 @@ void sendFuelDataViaWiFi(float fuelValue)
     // Show "Back to Data..." message and cyan status bar for Bluetooth reconnection
     GUI_SyncDataWithStatus(false, status_color);
 
+#if 1
+    // Reconnect to Bluetooth and ELM
+    DEBUG_PORT.println("Reconnecting to Bluetooth and ELM...");
     
-    // Reconnect to Bluetooth
-    DEBUG_PORT.println("Reconnecting to Bluetooth...");
-    ELM_PORT.begin(BT_LOCAL_NAME, true);
+    Connect_BT();  // This will handle the Bluetooth connection
+    Connect_ELM(); // This will re-establish the ELM327 connection
     
-    if(!ELM_PORT.connect(BT_DEVICE_NAME)) 
-    {
-        DEBUG_PORT.println("Couldn't reconnect to OBD scanner");
-        status_color = SYNC_BT_FAILED;
-        GUI_SyncDataWithStatus(false, status_color);
-        delay(1000);
-    } 
-    else 
-    {
-        DEBUG_PORT.println("Bluetooth reconnected successfully");
-    }
-
+    DEBUG_PORT.println("Bluetooth and ELM reconnected successfully");
+    
+    // Re-initialize ELM327 settings
+    myELM327.sendCommand_Blocking(HEADERS_ON);
+#endif 
 }
 
 void checkEngineShutdown()
@@ -341,7 +347,7 @@ void checkEngineShutdown()
 void SystemMonitoring(float fuel)
 {
     // Check if engine has shut down
-    checkEngineShutdown();
+    //checkEngineShutdown();
     
     // Handle system shutdown mode
     if(System_Mode == SYSTEM_SHUTDOWN) 
@@ -397,6 +403,11 @@ void SystemMonitoring(float fuel)
                     
                     // Execute WiFi data upload
                     sendFuelDataViaWiFi(fuel);
+
+                    // Restore normal GUI display
+                    tft.fillScreen(TFT_BLACK);
+                    GUI_DataHeaders();
+                    Scheduler_Init();
                     
                     // Reset all tracking variables
                     pressCount = 0;
@@ -404,10 +415,6 @@ void SystemMonitoring(float fuel)
                     secondPressTime = 0;
                     thirdPressTime = 0;
                     triplePressDetected = false;
-                    // Restore normal GUI display
-                    tft.fillScreen(TFT_BLACK);
-                    GUI_DataHeaders();
-                    Scheduler_Init();
                     return; // Exit early to prevent brightness toggle
                 } 
                 else 
