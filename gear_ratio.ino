@@ -42,7 +42,7 @@ int  calculate_gear(float vss, float rpm)
     }
   }
 
-    return result+1;
+    return result;
 }
 
  
