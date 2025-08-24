@@ -13,10 +13,10 @@
 #include "aphud.h"
 //#include "Formula1_Bold_web_048pt7b.h"
 #include "CardotSemibold7pt7b.h"
-#include "CardotSemibold22pt7b.h"
+//#include "CardotSemibold22pt7b.h"
 #include "CardotSemibold12pt7b.h"
 #include "CardotSemibold14pt7b.h"
-#include "CardotSemibold42pt7b.h"
+//#include "CardotSemibold42pt7b.h"
 #include "CardotSemibold48pt7b.h"
 
 
