@@ -79,10 +79,11 @@ obd_pid_states obd_state = ENG_RPM;
 const int UNDEFINED_GEAR = 9;
 
 
-#define SYNC_BT_DISCONNECTED    0 
-#define SYNC_WIFI_CONNECTED     1 
-#define SYNC_WIFI_FAILED        2 
-#define SYNC_BT_FAILED          3 
+#define SYNC_BT_DISCONNECTED 0
+#define SYNC_WIFI_CONNECTED 1
+#define SYNC_DATA_OK 2
+#define SYNC_DATA_FAIL 3
+#define SYNC_WIFI_FAILED 4
 
 String Srpm = "";
 String Svss = "";
@@ -220,34 +221,16 @@ const unsigned long FIVE_SECONDS = 5000; // 5 seconds in milliseconds
 // Function to handle WiFi connection and HTTP data transmission to Home Assistant
 void sendFuelDataViaWiFi(float fuelValue) 
 {
-    /*
-     * STATUS BAR COLOR CODING SYSTEM:
-     * 
-     * TFT_CYAN (0x07FF):     Bluetooth disconnect/reconnect phase
-     * TFT_GREEN (0x07E0):    WiFi connected successfully OR HTTP request successful
-     * TFT_RED (0xF800):      WiFi connection failed OR HTTP request failed
-     * TFT_DARKGREY (0x7BEF): Bluetooth reconnection failed
-     * 
-     * STATE FLOW:
-     * 1. CYAN   - Initial state: Bluetooth disconnecting, preparing for WiFi
-     * 2. GREEN  - WiFi connected successfully, ready for HTTP request
-     * 3. GREEN  - HTTP request successful (fuel data sent to Home Assistant)
-     * 4. RED    - WiFi connection failed OR HTTP request failed
-     * 5. CYAN   - Bluetooth reconnection phase
-     * 6. DARKGREY - Bluetooth reconnection failed (fallback state)
-     */
-    static uint16_t status_color = 0x0000;
-    // Show sync message with cyan status bar for Bluetooth disconnect
-    GUI_SyncDataWithStatus(true, SYNC_BT_DISCONNECTED);
+    int attempts = 0;
     
     DEBUG_PORT.println("Disconnecting from Bluetooth...");
     ELM_PORT.disconnect();
+    GUI_DrawSyncStatus(SYNC_BT_DISCONNECTED);
     delay(1000);
     
     DEBUG_PORT.println("Connecting to WiFi...");
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     
-    int attempts = 0;
     while(WiFi.status() != WL_CONNECTED && attempts < 10) 
     {
         delay(500);
@@ -258,7 +241,7 @@ void sendFuelDataViaWiFi(float fuelValue)
     if(WiFi.status() == WL_CONNECTED) 
     {
         // Status bar turns GREEN for WiFi connected
-        GUI_SyncDataWithStatus(true, SYNC_WIFI_CONNECTED);
+        GUI_DrawSyncStatus(SYNC_WIFI_CONNECTED);
         
         DEBUG_PORT.println("\nWiFi connected!");
         DEBUG_PORT.print("IP address: ");
@@ -283,35 +266,27 @@ void sendFuelDataViaWiFi(float fuelValue)
             String response = http.getString();
             DEBUG_PORT.println("Home Assistant Response code: " + String(httpResponseCode));
             DEBUG_PORT.println("Response: " + response);
-            status_color = SYNC_WIFI_CONNECTED;
+            GUI_DrawSyncStatus(SYNC_DATA_OK);
         } 
         else 
         {
             DEBUG_PORT.println("Home Assistant request failed");
-            status_color = SYNC_WIFI_FAILED;
+            GUI_DrawSyncStatus(SYNC_DATA_FAIL);
         }
-        GUI_SyncDataWithStatus(true, status_color);
-
 
         http.end();
-        
         // Disconnect from WiFi
         WiFi.disconnect();
         DEBUG_PORT.println("WiFi disconnected");
     } 
     else 
     {
+        GUI_DrawSyncStatus(SYNC_WIFI_FAILED);
         DEBUG_PORT.println("WiFi connection failed");
-        status_color = SYNC_WIFI_FAILED;
         WiFi.disconnect();
-        // Status bar turns RED for WiFi connection failure
-        GUI_SyncDataWithStatus(true, status_color);
+
     }
     
-    // Show "Back to Data..." message and cyan status bar for Bluetooth reconnection
-    GUI_SyncDataWithStatus(false, status_color);
-
-#if 1
     // Reconnect to Bluetooth and ELM
     DEBUG_PORT.println("Reconnecting to Bluetooth and ELM...");
     
@@ -322,27 +297,9 @@ void sendFuelDataViaWiFi(float fuelValue)
     
     // Re-initialize ELM327 settings
     myELM327.sendCommand_Blocking(HEADERS_ON);
-#endif 
+
 }
 
-void checkEngineShutdown()
-{
-    if(car.rpm < 600) 
-    {
-        if(lowRpmStartTime == 0) 
-        {
-            lowRpmStartTime = millis();
-        }
-        else if((millis() - lowRpmStartTime) > 2000) 
-        {
-            System_Mode = SYSTEM_SHUTDOWN;
-        }
-    }
-    else
-    {
-        lowRpmStartTime = 0;
-    }
-}
 
 void SystemMonitoring(float fuel)
 {

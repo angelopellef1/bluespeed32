@@ -18,6 +18,13 @@
 #include "CardotSemibold12pt7b.h"
 #include "CardotSemibold14pt7b.h"
 //#include "CardotSemibold42pt7b.h"
+
+// Sync status defines
+#define SYNC_BT_DISCONNECTED    0 
+#define SYNC_WIFI_CONNECTED     1 
+#define SYNC_DATA_OK           2 
+#define SYNC_DATA_FAIL        3
+#define SYNC_WIFI_FAILED      4 
 //#include "CardotSemibold42pt7b.h"
 #include "CardotSemibold48pt7b.h"
 
@@ -28,10 +35,6 @@
 #define TFT_C_DARK_MAGENTA 0x480a
 #define TFT_C_ORANGE_D  0xfa80
 
-
-
-uint16_t status_colors_maps[4] = {TFT_CYAN, TFT_C_DARK_MAGENTA, TFT_RED, TFT_DARKGREY};
-
 #define GB_TEXTBOX_H 16
 #define GB_TEXTBOXR_W 34
 #define GB_MNUMBOX_H 34
@@ -40,11 +43,6 @@ uint16_t status_colors_maps[4] = {TFT_CYAN, TFT_C_DARK_MAGENTA, TFT_RED, TFT_DAR
 
 #define GB_BNUMBOX_W 85
 #define GB_BNUMBOX_H 133 
-
-
-
-
-
 
 typedef enum 
 {
@@ -88,11 +86,6 @@ typedef struct
     {V_ENG_RPM, {2500,2501,5000,6000},      {TFT_BLACK, TFT_BLACK, TFT_BLACK, TFT_BLACK}, {TFT_WHITE, TFT_CYAN, TFT_C_YELLORANCE, TFT_RED} },
  };
 
-
-
-
-#if 1
-// gerar on the LEFT
  const guiboxes_t guiboxes[MAX_GUIBOXES] = 
  {
     {ENG_RPM,   GB_MEDIUM_RT,   GB_BNUMBOX_W + GB_MNUMBOX_W +2,     4,                      4},
@@ -103,47 +96,7 @@ typedef struct
     {FUEL_CUSTOM, GB_SMALL,    GB_BNUMBOX_W + 1+  42,               57,                     2},
     {V_ENG_RPM, GB_WIDELINE,    0,                                  0,                      4}
  };
-#endif
 
-
-#if 0
-// gerar on the right
- const guiboxes_t guiboxes[MAX_GUIBOXES] = 
- {
-    {ENG_RPM,   GB_MEDIUM,  0,4,    4},
-    {SPEED,     GB_MEDIUM,  GB_MNUMBOX_W,4,    4},
-    {GEAR_C,    GB_BIG,     154,4,    4}, //ok
-    {OIL,       GB_MEDIUM,  0,82,    4},
-    {COOLANT,   GB_MEDIUM,  GB_MNUMBOX_W,82,    4},
-    {V_ENG_RPM, GB_WIDELINE, 0,0, 4}
- };
-#endif
-
-
-#if 0 //original centered
-
- const guiboxes_t guiboxes[MAX_GUIBOXES] = 
- {
-    {ENG_RPM,   GB_MEDIUM,  0,4,    4},     //75x36 original numberbox mid
-    {SPEED,     GB_MEDIUM,  165,4,    4},
-    {GEAR_C,    GB_BIG,     76,4,    4},    //86x133 original numberboxbig
-    {OIL,       GB_MEDIUM,  0,94,    4},
-    {COOLANT,   GB_MEDIUM,  165,94,    4},
-    {V_ENG_RPM, GB_WIDELINE, 0,0, 4}
- };
-#endif
-
-#if 0
- const guiboxes_t guiboxes[MAX_GUIBOXES] = 
- {
-    {ENG_RPM,   GB_MEDIUM,  0,4,    4},
-    {SPEED,     GB_MEDIUM,  76,4,    4},
-    {GEAR_C,    GB_BIG,     152,4,    4},
-    {OIL,       GB_MEDIUM,  0,90,    4},
-    {COOLANT,   GB_MEDIUM,  76,90,    4},
-    {V_ENG_RPM,   GB_WIDELINE, 0,0, 4}
- };
-#endif
 
 void GUI_FirstSplash() 
 {
@@ -210,48 +163,6 @@ void GUI_ConnectedSplash(String  text, int x, int y, int font_size, uint16_t col
     img.drawString(text, 10, 67,font_size);
     img.pushSprite(x, y);
     img.deleteSprite();
-}
-
-void GUI_SyncDataWithStatus(bool going_to_wifi, uint16_t statusColor)
-{
-    // Ensure sprite is deleted before creating new one
-    if(img.created()) {
-        img.deleteSprite();
-    }
-    
-    // Create sprite for sync message
-    int statusBarX = (240 - 80) / 2;  // Center the 80px wide bar
-    int statusBarY = 135 - 8;         // 4px from bottom (8px total height)
-
-    img.createSprite(240, 135);
-    img.setTextWrap(false);
-    img.fillSprite(TFT_BLACK);
-    img.setTextDatum(MC_DATUM);
-    img.setTextSize(1);
-    img.setTextColor(TFT_DARKGREY);
-    img.setFreeFont(&CardotSemibold12pt7b);
-    
-    if(going_to_wifi)
-    {
-        img.drawString("Sync data..", 120, 67, 1);
-    }
-    else
-    {
-        img.drawString("Back to Data...", 120, 67, 1);
-    }
-   
-    // Ensure statusColor is within bounds
-    if(statusColor < 4) {
-        img.fillRect(statusBarX, statusBarY, 80, 4, status_colors_maps[statusColor]);
-    } else {
-        img.fillRect(statusBarX, statusBarY, 80, 4, TFT_RED); // Fallback color
-    }
-    
-    img.pushSprite(0, 0);
-    img.deleteSprite();
-    
-    // Small delay to ensure display updates
-    delay(10);
 }
 
 
@@ -541,3 +452,58 @@ void GuiColors_get(obd_pid_states pi, float in_value, uint16_t * bkg, uint16_t *
     }
     
  }
+
+ void GUI_DrawSyncStatus(uint8_t state)
+{
+    const uint8_t CIRCLE_RADIUS = 5;
+    const uint8_t NUM_CIRCLES = 3;
+    const uint8_t CIRCLE_Y = tft.height() / 2;
+    
+    // Calculate spacing for 3 circles to be equally distributed in 240px
+    // If we want equal spaces between circles and edges:
+    // 240 = x + CIRCLE + space + CIRCLE + space + CIRCLE + x
+    // where x is the edge spacing
+    // space = x (for equal distribution)
+    // 240 = 4x + 3*(2*CIRCLE_RADIUS)
+    // x = (240 - 3*2*CIRCLE_RADIUS) / 4
+    
+    const uint8_t EDGE_SPACE = (240 - (NUM_CIRCLES * 2 * CIRCLE_RADIUS)) / 4;
+    const uint8_t CIRCLE_SPACING = EDGE_SPACE;
+    const uint8_t START_X = EDGE_SPACE + CIRCLE_RADIUS;
+    
+    // Clear background
+    tft.fillScreen(TFT_BLACK);
+    
+    // Draw all circles with gray outline and black fill
+    for(uint8_t i = 0; i < NUM_CIRCLES; i++) {
+        uint16_t x = START_X + (i * (2 * CIRCLE_RADIUS + CIRCLE_SPACING));
+        tft.drawCircle(x, CIRCLE_Y, CIRCLE_RADIUS, TFT_DARKGREY);
+        tft.fillCircle(x, CIRCLE_Y, CIRCLE_RADIUS - 1, TFT_BLACK);
+    }
+    
+    // Fill appropriate circle based on state
+    uint16_t x;
+    switch(state) {
+        case SYNC_BT_DISCONNECTED:
+            // First circle cyan
+            x = START_X;
+            tft.fillCircle(x, CIRCLE_Y, CIRCLE_RADIUS - 1, TFT_CYAN);
+            break;
+            
+        case SYNC_WIFI_CONNECTED:
+        case SYNC_WIFI_FAILED:
+            // Second circle (blue or yellow)
+            x = START_X + (2 * CIRCLE_RADIUS + CIRCLE_SPACING);
+            tft.fillCircle(x, CIRCLE_Y, CIRCLE_RADIUS - 1, 
+                          (state == SYNC_WIFI_CONNECTED ? TFT_BLUE : TFT_YELLOW));
+            break;
+            
+        case SYNC_DATA_OK:
+        case SYNC_DATA_FAIL:
+            // Third circle (green or red)
+            x = START_X + 2 * (2 * CIRCLE_RADIUS + CIRCLE_SPACING);
+            tft.fillCircle(x, CIRCLE_Y, CIRCLE_RADIUS - 1, 
+                          (state == SYNC_DATA_OK ? TFT_GREEN : TFT_RED));
+            break;
+    }
+}
