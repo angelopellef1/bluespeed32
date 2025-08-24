@@ -114,7 +114,7 @@ void GUI_FirstSplash()
     img.setFreeFont(&Orbitron_Light_24);  // Select free font Formula1_Bold_web_020pt7bBitmaps
     img.drawString("APHUD", 180,45);
     img.drawString("BRZ", 200,70);
-    img.drawString("v0.21", 190,95);
+    img.drawString("v0.30", 190,95);
 
     // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
     img.pushSprite(0, 0);
