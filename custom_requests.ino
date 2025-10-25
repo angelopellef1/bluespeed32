@@ -153,6 +153,25 @@ req_states obdcustom_subaru_oil( float * value)
 }
 
 
+/**
+ * @brief Request and decode fuel level from Subaru ECU using custom PID
+ * 
+ * This function implements a state machine to query the fuel level from a Subaru ECU.
+ * The process involves:
+ * 1. Setting ECU header to 7C0 (Subaru-specific)
+ * 2. Sending PID 2129 request
+ * 3. Decoding the response (7C8 03 61 29 XX where XX is fuel level)
+ * 4. Restoring default OBD header
+ * 
+ * Protocol sequence:
+ * -> AT SH 7C0    (Set Header)
+ * -> 2129         (Request PID)
+ * <- 7C8 03 61 29 XX  (Response format)
+ * -> AT SH 7DF    (Restore Header)
+ * 
+ * @param value Pointer to float where the decoded fuel level in half liter unit ( 1 = 0.5L) will be stored
+ * @return req_states REQ_OK if successful, REQ_E_WAIT if in progress, REQ_E_FAIL if failed
+ */
 req_states obdcustom_subaru_fuel( float * value)
 {
     req_state = REQ_E_WAIT;
@@ -162,10 +181,12 @@ req_states obdcustom_subaru_fuel( float * value)
     switch (req_stage)
     {
         case STEP_CHANGE_HEADER:
+            // Stage 1: Set the correct header for Subaru fuel ECU communication
             req_state = REQ_E_WAIT;
 
             if (myELM327.nb_rx_state != ELM_GETTING_MSG)
             {
+                // Set header to 7C0 - Subaru fuel system ECU address
                 strcpy(command, "AT SH 7C0");
 
                 myELM327.sendCommand_Blocking(command);
@@ -190,28 +211,37 @@ req_states obdcustom_subaru_fuel( float * value)
         break;
     
         case STEP_PID:
-
+            // Stage 2: Request fuel level using Subaru-specific PID 2129
+            
             if (nb_query_state == SEND_COMMAND) 
             {
+                // Send PID request for fuel level
                 myELM327.sendCommand("2129"); 
                 nb_query_state = WAITING_RESP;         
             }
             else if (nb_query_state == WAITING_RESP) 
             {
+                // Wait for and retrieve the response
                 myELM327.get_response(); 
             }
             
             if (myELM327.nb_rx_state == ELM_SUCCESS)
             {      
-                //>21291
-                //7C8 03  61 29 >1B<  
+                // Expected response format:
+                // Request:  2129
+                // Response: 7C8 03 61 29 XX  (where XX is the fuel level in hex)
                 if (myELM327.recBytes > 7)
                 {
+                        // Extract fuel level value from response
+                        // Position 9-10 contains the hex value for fuel level
                         rawValue = hexCharToValue(myELM327.payload[9]); 
                         rawValue2 = hexCharToValue(myELM327.payload[9+1]);
+                        
+                        // Combine the two hex digits into one value
                         conValue = (int16_t)((rawValue<<4)&0xF0) ;
                         conValue |= (int16_t)(0x0F & rawValue2);
-                        conValue *= 0.5;
+                        
+                        // Store the result
                         *value = (float)conValue;        
                         nb_query_state = SEND_COMMAND;          
                         req_stage = STEP_RESTORE_HEADER;

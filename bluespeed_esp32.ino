@@ -219,7 +219,7 @@ const unsigned long FIVE_SECONDS = 5000; // 5 seconds in milliseconds
 
 
 // Function to handle WiFi connection and HTTP data transmission to Home Assistant
-void sendFuelDataViaWiFi(float fuelValue) 
+void sendFuelDataViaWiFi(float fuelValue_halfliter) 
 {
     int attempts = 0;
     
@@ -257,7 +257,7 @@ void sendFuelDataViaWiFi(float fuelValue)
         http.addHeader("Content-Type", "application/json");
         
         // Create JSON payload
-        String payload = "{\"state\":\"" + String(fuelValue, 1) + "\",\"attributes\":{\"unit_of_measurement\":\"L\"}}";
+        String payload = "{\"state\":\"" + String( fuelValue_halfliter/2, 1) + "\",\"attributes\":{\"unit_of_measurement\":\"L\"}}";
         
         int httpResponseCode = http.POST(payload);
         
@@ -477,7 +477,7 @@ void loop()
 #ifdef SIMULATION
     obd_state =(obd_pid_states) 0xFF;
     car.speed = 0;
-    fuel = random(0, 50);
+    car.fuel = 10.5;
     car.rpm = 2600;
 
     GuiBox_draw(ENG_RPM, 2600);
@@ -486,7 +486,7 @@ void loop()
     GuiBox_draw(GEAR_C,6);
     GuiBox_draw(OIL, 125);
     GuiBox_draw(COOLANT, 100);
-    GuiBox_draw(FUEL_CUSTOM, fuel);
+    GuiBox_draw(FUEL_CUSTOM, car.fuel);
     // Don't return here - let button logic execute
 #endif
 
@@ -586,7 +586,7 @@ void loop()
             req = obdcustom_subaru_fuel(&fuel);
             if(REQ_OK == req)
             {
-                car.fuel = fuel;
+                car.fuel = ((float)(fuel))/2; // Convert half-liter unit to liters
                 car.update_flags |= (1UL << FUEL_CUSTOM);
                 Scheduler_release(); 
             }

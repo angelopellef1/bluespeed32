@@ -416,13 +416,21 @@ void GuiColors_get(obd_pid_states pi, float in_value, uint16_t * bkg, uint16_t *
                 GuiColors_get(pi, data, &bkgr, &textc);
             }
 
-            if(data == UNDEFINED_GEAR+1)
+            if((data == UNDEFINED_GEAR+1) && (pi == GEAR_C))
             {
                 Sdata = "";
             }
             else
             {
-                Sdata = String(data,0);
+                if(pi == FUEL_CUSTOM)
+                {
+                    Sdata = String(data,1);
+                }
+                else
+                {
+                    Sdata = String(data,0); 
+                }
+                
             }
 
 
