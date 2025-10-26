@@ -2,6 +2,7 @@
 #define DEBUG true
 #include "ELMduino.h"
 #include "secrets.h"  // Include sensitive configuration data
+#include "types.h"
 
 #define LOAD_GFXFF
 #include <TFT_eSPI.h> // Graphics and font library for ILI9341 driver chip
@@ -14,7 +15,8 @@
 // Only include fonts you actually use
 // #include "Formula1_Bold_web_020pt7b.h"  // Commented out if not used
 
-#define SIMULATION_ 0
+#define SIMULATION 1
+#define REAL_DATA_ 0
 
 #define S1_PIN 0        // Change to your S1 button GPIO
 #define TFT_BL 4        // Backlight control pin (PWM capable)
@@ -70,6 +72,7 @@ typedef enum {
   OIL,
   COOLANT,
   FUEL_CUSTOM,
+  FUEL_CONSUMPTION,
   PID_N,
   V_ENG_RPM
 } obd_pid_states;
@@ -110,15 +113,7 @@ int digitCount(int num)
     return count;
 }
 
-struct car_t {
-  float rpm;
-  float speed;
-  float gear;
-  float oil;
-  float coolant;
-  float fuel;
-  uint32_t update_flags;  // Bit flags for GUI updates
-} car;
+car_t car;
 
 void Connect_BT()
 {
@@ -175,6 +170,11 @@ void setup()
     tft.setTextSize(1);
     tft.fillScreen(TFT_BLACK);
     GUI_DataHeaders();
+    car.update_flags = 0;  // Initialize update flags
+
+    // Initialize speed buffer and fuel tracking
+    init_speed_buffer();
+    init_fuel_tracking();
     return;
 #endif
   
@@ -199,6 +199,10 @@ void setup()
 
     GUI_DataHeaders();
     car.update_flags = 0;  // Initialize update flags
+
+    // Initialize speed buffer and fuel tracking
+    init_speed_buffer();
+    init_fuel_tracking();
 }
 
 #define SYSTEM_SHUTDOWN 0
@@ -459,6 +463,9 @@ void process_gui_updates()
                 case FUEL_CUSTOM:
                     GuiBox_draw(FUEL_CUSTOM, car.fuel);
                     break;
+                case FUEL_CONSUMPTION:
+                    GuiBox_draw(FUEL_CONSUMPTION, car.consumption);
+                    break;
             }
         }
     }
@@ -474,11 +481,12 @@ void loop()
   
   obd_state = Scheduler_task_calculate(obd_state);
 
-#ifdef SIMULATION
+#ifdef FORCED_SIMULATION
     obd_state =(obd_pid_states) 0xFF;
     car.speed = 0;
     car.fuel = 10.5;
     car.rpm = 2600;
+    car.consumption = 6.5;
 
     GuiBox_draw(ENG_RPM, 2600);
     GuiBox_draw(V_ENG_RPM, 2600);
@@ -487,9 +495,28 @@ void loop()
     GuiBox_draw(OIL, 125);
     GuiBox_draw(COOLANT, 100);
     GuiBox_draw(FUEL_CUSTOM, car.fuel);
+    GuiBox_draw(FUEL_CONSUMPTION, car.consumption);
     // Don't return here - let button logic execute
 #endif
 
+
+#ifdef SIMULATION
+    if(obd_state < PID_N - 1) {
+        obd_state = (obd_pid_states)(obd_state + 1);
+    } else {
+        obd_state = ENG_RPM;
+    }
+
+    simulate_pid_value(&car, obd_state);
+    //store_speed(car.speed);
+    //process_new_fuel_level(car.fuel, &car.consumption);
+
+
+#endif
+
+
+
+#ifdef REAL_DATA
     switch(obd_state)
     {
         case ENG_RPM:
@@ -515,6 +542,7 @@ void loop()
             bk_kmh = kmh;
             kmh = myELM327.kph();
             car.speed = kmh; // Store speed in car structure
+            store_speed(car.speed);
             Svss = String(kmh,0);
             if(myELM327.nb_rx_state == ELM_SUCCESS)
             {
@@ -587,6 +615,10 @@ void loop()
             if(REQ_OK == req)
             {
                 car.fuel = ((float)(fuel))/2; // Convert half-liter unit to liters
+                if(process_new_fuel_level(car.fuel, &car.consumption))
+                {
+                    car.update_flags |= (1UL << FUEL_CONSUMPTION);
+                }
                 car.update_flags |= (1UL << FUEL_CUSTOM);
                 Scheduler_release(); 
             }
@@ -605,7 +637,8 @@ void loop()
         default:
             break;
     }
-    
+#endif // REAL_DATA    
+
     // Process any pending GUI updates
     process_gui_updates();
 }

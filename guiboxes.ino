@@ -40,6 +40,7 @@
 #define GB_MNUMBOX_H 34
 
 #define GB_MNUMBOX_W 75
+#define GB_NUMBOX_MICRO_W 45
 
 #define GB_BNUMBOX_W 85
 #define GB_BNUMBOX_H 133 
@@ -50,6 +51,7 @@ typedef enum
     GB_MEDIUM,
     GB_MEDIUM_RT,
     GB_SMALL,
+    GB_MICRO,
     GB_WIDELINE
 }boxtypes;
 
@@ -83,6 +85,7 @@ typedef struct
     {OIL,       {80,81,120,125},        {TFT_C_DARKBLUE, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} },
     {COOLANT,   {80,81,100,110},        {TFT_C_DARKBLUE, TFT_BLACK, TFT_C_YELLORANCE, TFT_RED}, {TFT_WHITE, TFT_WHITE, TFT_BLACK, TFT_BLACK} },
     {FUEL_CUSTOM, {10,11,12,95},      {TFT_C_YELLORANCE, TFT_BLACK, TFT_BLACK, TFT_C_DARK_GREEN}, {TFT_BLACK, TFT_WHITE, TFT_WHITE, TFT_WHITE} },
+    {FUEL_CONSUMPTION, {10,11,12,95},  {TFT_BLACK, TFT_BLACK, TFT_BLACK, TFT_BLACK}, {TFT_DARKGREY, TFT_DARKGREY, TFT_DARKGREY, TFT_DARKGREY} },
     {V_ENG_RPM, {2500,2501,5000,6000},      {TFT_BLACK, TFT_BLACK, TFT_BLACK, TFT_BLACK}, {TFT_WHITE, TFT_CYAN, TFT_C_YELLORANCE, TFT_RED} },
  };
 
@@ -93,7 +96,8 @@ typedef struct
     {GEAR_C,    GB_BIG,         0,                                  4,                      4}, 
     {OIL,       GB_MEDIUM,      GB_BNUMBOX_W + 1,                   84,                     4},
     {COOLANT,   GB_MEDIUM,      GB_BNUMBOX_W + 1 + GB_MNUMBOX_W +2 ,84,                     4},
-    {FUEL_CUSTOM, GB_SMALL,    GB_BNUMBOX_W + 1+  42,               57,                     2},
+    {FUEL_CUSTOM, GB_SMALL,     GB_BNUMBOX_W + 1 + 23,               57,                     2},
+    {FUEL_CONSUMPTION, GB_SMALL,  GB_BNUMBOX_W + 1+  30 + 60 ,            57,                 2},
     {V_ENG_RPM, GB_WIDELINE,    0,                                  0,                      4}
  };
 
@@ -193,7 +197,7 @@ void GUI_DataHeaders()
             1, 
             TFT_DARKGREY,TFT_BLACK);        
     
-    textBox("Fuel",
+    textBox("LT",
             GB_BNUMBOX_W + 1 , 
             61 , 
             1, 
@@ -339,6 +343,18 @@ void numberBox_rtf(String  num, int x, int y, int font_size, uint16_t color_bkg,
     img.deleteSprite();
 }
 
+void numberBox_micro(String  num, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
+{
+    img.createSprite(GB_NUMBOX_MICRO_W, GB_MNUMBOX_H-8);
+    img.setTextWrap(false); 
+    img.fillSprite(color_bkg);
+    img.setFreeFont(&CardotSemibold12pt7b);    
+    img.setTextColor(color_text);  
+    img.setTextDatum(MC_DATUM);
+    img.drawString(num, 30, 10);
+    img.pushSprite(x, y);
+    img.deleteSprite();
+}
 
 void numberBox(String  num, int x, int y, int font_size, uint16_t color_bkg, uint16_t color_text)
 {
@@ -453,6 +469,10 @@ void GuiColors_get(obd_pid_states pi, float in_value, uint16_t * bkg, uint16_t *
             else if(guiboxes[i].gb_type == GB_SMALL)
             {
                 numberBox_rtf(Sdata, guiboxes[i].x,  guiboxes[i].y,  guiboxes[i].text_size, bkgr, textc );
+            }
+            else if(guiboxes[i].gb_type == GB_MICRO)
+            {
+                numberBox_micro(Sdata, guiboxes[i].x,  guiboxes[i].y,  guiboxes[i].text_size, bkgr, textc );
             }
             
             break;

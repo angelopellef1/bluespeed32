@@ -20,6 +20,7 @@ GEAR_C,
 OIL,
 COOLANT,
 FUEL_CUSTOM,
+FUEL_CONSUMPTION,
 PID_N
  */
 const uint32_t TASK_TICKER[REQUEST_N] = 
@@ -30,6 +31,7 @@ const uint32_t TASK_TICKER[REQUEST_N] =
     60,
     5,
     90,
+    60,
  };
 
 /**
@@ -42,6 +44,7 @@ const uint32_t TASK_TICKER[REQUEST_N] =
     1,
     3,
     3,
+    5,
     5,
  };
 
