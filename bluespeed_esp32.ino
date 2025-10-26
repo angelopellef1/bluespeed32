@@ -15,8 +15,8 @@
 // Only include fonts you actually use
 // #include "Formula1_Bold_web_020pt7b.h"  // Commented out if not used
 
-#define SIMULATION 1
-#define REAL_DATA_ 0
+#define SIMULATION_ 0
+#define REAL_DATA 1
 
 #define S1_PIN 0        // Change to your S1 button GPIO
 #define TFT_BL 4        // Backlight control pin (PWM capable)
